@@ -1,0 +1,7 @@
+{
+  "last_updated": "2026-04-29T00:00:00Z",
+  "note": "Revenue tracking not yet configured. Set up affiliate API connections in revenue-sync.yml.",
+  "total_earned_usd": 0,
+  "providers": {},
+  "pageviews": 0
+}
