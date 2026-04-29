@@ -1,0 +1,39 @@
+---
+import type { Provider } from '../lib/pricing.ts';
+
+interface Props {
+  providerA: Provider;
+  providerB: Provider;
+}
+
+const { providerA, providerB } = Astro.props;
+
+const rows = [
+  { label: 'Founded', a: providerA.founded.toString(), b: providerB.founded.toString() },
+  { label: 'Billing', a: providerA.billing.join(', '), b: providerB.billing.join(', ') },
+  { label: 'Regions', a: providerA.regions.join(', '), b: providerB.regions.join(', ') },
+  { label: 'Features', a: providerA.features.join(', '), b: providerB.features.join(', ') },
+  { label: 'Trust Score', a: `${providerA.trust_score}/5`, b: `${providerB.trust_score}/5` },
+];
+---
+
+<div class="card" style="padding: 0; overflow: hidden;">
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 30%;">Feature</th>
+        <th>{providerA.name}</th>
+        <th>{providerB.name}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {rows.map(row => (
+        <tr>
+          <td style="color: var(--text-muted);">{row.label}</td>
+          <td>{row.a}</td>
+          <td>{row.b}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>

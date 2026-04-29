@@ -1,0 +1,90 @@
+---
+import type { PriceItem } from '../lib/pricing.ts';
+import { formatPrice } from '../lib/pricing.ts';
+import { buildAffiliateUrl } from '../lib/affiliate.ts';
+
+interface Props {
+  prices: Array<PriceItem & { provider_slug: string; provider_name?: string }>;
+  gpuName?: string;
+  scrapedAt?: string;
+  limit?: number;
+}
+
+const { prices, gpuName, scrapedAt, limit = 20 } = Astro.props;
+
+const sorted = [...prices]
+  .sort((a, b) => a.price_usd_per_hour - b.price_usd_per_hour)
+  .slice(0, limit);
+
+const cheapest = sorted[0];
+---
+
+{sorted.length === 0 ? (
+  <p style="color: var(--text-muted);">No pricing data available yet. Check back after the next scrape.</p>
+) : (
+  <div>
+    {gpuName && (
+      <div style="display: flex; align-items: baseline; gap: 1rem; margin-bottom: 1rem;">
+        <span style="font-size: 0.8rem; color: var(--text-muted);">
+          {sorted.length} offer{sorted.length !== 1 ? 's' : ''} found
+          {cheapest && <> — from <strong class="accent">{formatPrice(cheapest.price_usd_per_hour)}</strong></>}
+        </span>
+        {scrapedAt && (
+          <span style="font-size: 0.75rem; color: var(--text-dim);">
+            as of {new Date(scrapedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}, verify on provider site
+          </span>
+        )}
+      </div>
+    )}
+
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <table>
+        <thead>
+          <tr>
+            <th>Provider</th>
+            <th>Configuration</th>
+            <th>Region</th>
+            <th>Billing</th>
+            <th>Availability</th>
+            <th style="text-align: right;">Price/hr</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {sorted.map((item, i) => (
+            <tr class={i === 0 ? 'best-price' : ''}>
+              <td>
+                <strong>{item.provider_name || item.provider_slug}</strong>
+                {i === 0 && <span class="badge badge-green" style="margin-left: 0.5rem;">cheapest</span>}
+              </td>
+              <td style="color: var(--text-muted);">{item.configuration}</td>
+              <td style="color: var(--text-muted);">{item.region}</td>
+              <td>
+                <span class="badge badge-gray">{item.billing}</span>
+              </td>
+              <td>
+                <span class={`badge ${item.availability === 'spot' ? 'badge-yellow' : 'badge-blue'}`}>
+                  {item.availability}
+                </span>
+              </td>
+              <td style="text-align: right; font-weight: 600; font-variant-numeric: tabular-nums;">
+                {formatPrice(item.price_usd_per_hour)}
+              </td>
+              <td style="text-align: right;">
+                <a
+                  href={buildAffiliateUrl(item.provider_slug)}
+                  rel="sponsored noopener"
+                  target="_blank"
+                  class="btn-primary"
+                  style="padding: 0.3rem 0.75rem; font-size: 0.8rem;"
+                >
+                  Rent →
+                </a>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+)}
