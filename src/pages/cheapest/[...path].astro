@@ -1,0 +1,142 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PriceTable from '../../components/PriceTable.astro';
+import CTA from '../../components/CTA.astro';
+import RelatedPages from '../../components/RelatedPages.astro';
+import {
+  getGPUs, getUseCases, getProviders, getPricesForGPU, formatPrice, getLastScrapeDate,
+} from '../../lib/pricing.ts';
+import {
+  buildTitle, buildDescription, buildCanonical, buildBreadcrumbs, buildFAQSchema,
+} from '../../lib/seo.ts';
+
+export function getStaticPaths() {
+  const gpus = getGPUs();
+  const useCases = getUseCases();
+  const paths = [];
+  for (const gpu of gpus) {
+    for (const uc of useCases) {
+      if (gpu.vram_gb >= uc.min_vram_gb) {
+        paths.push({
+          params: { path: `${gpu.slug}-for-${uc.slug}` },
+          props: { gpu, useCase: uc },
+        });
+      }
+    }
+  }
+  return paths;
+}
+
+const { gpu, useCase } = Astro.props;
+const providers = getProviders();
+const prices = getPricesForGPU(gpu.slug)
+  .map((p) => ({ ...p, provider_name: providers.find((pv) => pv.slug === p.provider_slug)?.name }))
+  .sort((a, b) => a.price_usd_per_hour - b.price_usd_per_hour);
+
+const cheapest = prices[0];
+const cheapestProvider = cheapest ? providers.find((p) => p.slug === cheapest.provider_slug) : null;
+const scrapedAt = getLastScrapeDate(cheapest?.provider_slug ?? '');
+
+const title = buildTitle([`Cheapest ${gpu.name} for ${useCase.name}`, 'PriceGPU']);
+const description = buildDescription(
+  `Find the cheapest ${gpu.name} for ${useCase.name}. ${gpu.vram_gb}GB VRAM meets the ${useCase.min_vram_gb}GB minimum. ${cheapest ? `From ${formatPrice(cheapest.price_usd_per_hour)}/hr on ${cheapestProvider?.name}.` : ''}`
+);
+const canonical = buildCanonical(`/cheapest/${gpu.slug}-for-${useCase.slug}`);
+
+const faqs = [
+  {
+    q: `Is the ${gpu.name} good for ${useCase.name}?`,
+    a: `Yes. ${useCase.name} requires at least ${useCase.min_vram_gb}GB VRAM; the ${gpu.name} has ${gpu.vram_gb}GB. ${gpu.vram_gb >= useCase.recommended_vram_gb ? 'It also meets the recommended VRAM threshold.' : `For best performance, ${useCase.recommended_vram_gb}GB+ is recommended.`}`,
+  },
+  {
+    q: `What is the cheapest ${gpu.name} for ${useCase.name}?`,
+    a: cheapest && cheapestProvider
+      ? `${cheapestProvider.name} offers the ${gpu.name} at ${formatPrice(cheapest.price_usd_per_hour)}/hr (${cheapest.availability}, ${cheapest.region}).`
+      : 'Pricing data is being refreshed.',
+  },
+  {
+    q: `How long will ${useCase.name} take on a ${gpu.name}?`,
+    a: `Typical runtime for ${useCase.name} is ${useCase.typical_runtime}. The ${gpu.name} delivers ${gpu.fp16_tflops} TFLOPS FP16.`,
+  },
+];
+
+const schemas = [
+  buildBreadcrumbs([
+    { name: 'Home', url: '/' },
+    { name: 'Cheapest', url: '/cheapest' },
+    { name: `${gpu.name} for ${useCase.name}`, url: canonical },
+  ]),
+  buildFAQSchema(faqs),
+];
+
+const allGPUs = getGPUs();
+const relatedLinks = [
+  { title: `${gpu.name} pricing`, url: `/gpu/${gpu.slug}`, description: `All providers for ${gpu.name}` },
+  { title: `Best GPU for ${useCase.name}`, url: `/use-case/${useCase.slug}`, description: undefined },
+  ...allGPUs
+    .filter((g) => g.slug !== gpu.slug && g.vram_gb >= useCase.min_vram_gb)
+    .slice(0, 4)
+    .map((g) => ({
+      title: `${g.name} for ${useCase.name}`,
+      url: `/cheapest/${g.slug}-for-${useCase.slug}`,
+      description: `${g.vram_gb}GB VRAM · ${g.architecture}`,
+    })),
+];
+---
+
+<Layout {title} {description} {canonical} {schemas}>
+  <nav class="breadcrumb">
+    <a href="/">Home</a><span>/</span><a href="/cheapest">Cheapest</a><span>/</span>
+    <span>{gpu.name} for {useCase.name}</span>
+  </nav>
+
+  <h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem;">
+    Cheapest {gpu.name} for {useCase.name}
+  </h1>
+  <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+    {gpu.vram_gb}GB VRAM · {gpu.fp16_tflops} TFLOPS FP16 · {useCase.min_vram_gb}GB min required for {useCase.name}
+  </p>
+
+  {cheapestProvider && (
+    <div style="margin-bottom: 1.5rem;">
+      <CTA
+        providerSlug={cheapestProvider.slug}
+        providerName={cheapestProvider.name}
+        headline={`Best price: ${formatPrice(cheapest!.price_usd_per_hour)}/hr on ${cheapestProvider.name}`}
+        note={`${cheapest!.availability} · ${cheapest!.region} · verify before purchasing`}
+      />
+    </div>
+  )}
+
+  <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">{gpu.name} Prices — {prices.length} offers</h2>
+  <PriceTable {prices} gpuName={gpu.name} {scrapedAt} />
+
+  <section style="margin-top: 2.5rem;">
+    <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">Compatibility</h2>
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <table>
+        <tbody>
+          <tr><td style="color:var(--text-muted);">GPU VRAM</td><td>{gpu.vram_gb} GB ✓</td></tr>
+          <tr><td style="color:var(--text-muted);">Minimum Required</td><td>{useCase.min_vram_gb} GB</td></tr>
+          <tr><td style="color:var(--text-muted);">Recommended</td><td>{useCase.recommended_vram_gb} GB {gpu.vram_gb >= useCase.recommended_vram_gb ? '✓' : '(this GPU meets minimum only)'}</td></tr>
+          <tr><td style="color:var(--text-muted);">Typical Runtime</td><td>{useCase.typical_runtime}</td></tr>
+          <tr><td style="color:var(--text-muted);">FP16 TFLOPS</td><td>{gpu.fp16_tflops}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section style="margin-top: 2.5rem;">
+    <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">FAQ</h2>
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+      {faqs.map((faq) => (
+        <div class="card">
+          <div style="font-weight: 600; margin-bottom: 0.4rem;">{faq.q}</div>
+          <div style="color: var(--text-muted); font-size: 0.9rem;">{faq.a}</div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <RelatedPages links={relatedLinks} />
+</Layout>
