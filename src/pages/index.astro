@@ -1,0 +1,145 @@
+---
+import Layout from '../layouts/Layout.astro';
+import CTA from '../components/CTA.astro';
+import {
+  getGPUs, getProviders, getAllPrices, getCheapestForGPU, formatPrice,
+} from '../lib/pricing.ts';
+import { buildTitle, buildDescription, buildCanonical, buildWebSiteSchema } from '../lib/seo.ts';
+
+const gpus = getGPUs();
+const providers = getProviders();
+const allPrices = getAllPrices();
+
+const popularGPUs = [
+  'h100-80gb-sxm', 'a100-80gb-sxm', 'rtx-4090', 'l40s', 'a10', 'l4', 't4', 'h200-sxm',
+].map((slug) => {
+  const gpu = gpus.find((g) => g.slug === slug);
+  if (!gpu) return null;
+  const cheapest = getCheapestForGPU(slug);
+  return { gpu, cheapest };
+}).filter(Boolean);
+
+const title = buildTitle(['Live Cloud GPU Pricing', 'PriceGPU']);
+const description = buildDescription(
+  'Compare GPU cloud rental prices across RunPod, Vast.ai, Lambda Labs, and 12 more providers. Updated weekly. Free, no signup required.'
+);
+const canonical = buildCanonical('/');
+
+const schemas = [
+  buildWebSiteSchema(),
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Home', item: 'https://pricegpu.com' }],
+  },
+];
+---
+
+<Layout {title} {description} {canonical} {schemas}>
+  <div style="text-align: center; padding: 3rem 0 2rem;">
+    <div class="wordmark" style="font-size: 2.5rem; margin-bottom: 0.75rem; display: block;">
+      <span class="chevron" style="font-size: 2.5rem;">›</span>pricegpu
+    </div>
+    <p style="font-size: 1.1rem; color: var(--text-muted); max-width: 500px; margin: 0 auto 2rem;">
+      Live cloud GPU pricing across every major provider.<br />
+      <span style="font-size: 0.9rem;">{providers.length} providers · {gpus.length} GPU models · updated weekly</span>
+    </p>
+    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+      <a href="/gpu/h100-80gb-sxm" class="btn-primary">Compare H100 Prices →</a>
+      <a href="/api/prices.json" style="display:inline-flex;align-items:center;gap:0.4rem;border:1px solid var(--border);padding:0.6rem 1.2rem;border-radius:4px;font-size:0.9rem;color:var(--text-muted);">Public API</a>
+    </div>
+  </div>
+
+  <section style="margin-top: 2.5rem;">
+    <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 1rem;">
+      <h2 style="font-size: 1.1rem;">Popular GPUs — Cheapest Price</h2>
+      <a href="/gpu" style="font-size: 0.85rem; color: var(--text-muted);">See all {gpus.length} GPUs →</a>
+    </div>
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <table>
+        <thead>
+          <tr>
+            <th>GPU</th>
+            <th>VRAM</th>
+            <th>FP16 TFLOPS</th>
+            <th>Cheapest/hr</th>
+            <th>Provider</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {popularGPUs.map(({ gpu, cheapest }) => {
+            const provider = cheapest ? providers.find((p) => p.slug === cheapest.provider_slug) : null;
+            return (
+              <tr>
+                <td><a href={`/gpu/${gpu.slug}`} style="font-weight: 600;">{gpu.name}</a></td>
+                <td style="color:var(--text-muted);">{gpu.vram_gb} GB</td>
+                <td style="color:var(--text-muted);">{gpu.fp16_tflops}</td>
+                <td>
+                  {cheapest
+                    ? <strong class="accent">{formatPrice(cheapest.price_usd_per_hour)}</strong>
+                    : <span style="color:var(--text-dim);">—</span>}
+                </td>
+                <td style="color:var(--text-muted);">
+                  {provider ? <a href={`/provider/${provider.slug}`} style="color:var(--text-muted);">{provider.name}</a> : '—'}
+                </td>
+                <td>
+                  <a href={`/gpu/${gpu.slug}`} style="font-size:0.8rem;color:var(--text-muted);">Details →</a>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section style="margin-top: 2.5rem;">
+    <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 1rem;">
+      <h2 style="font-size: 1.1rem;">Providers</h2>
+      <a href="/provider" style="font-size: 0.85rem; color: var(--text-muted);">See all {providers.length} →</a>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem;">
+      {providers.slice(0, 9).map((p) => (
+        <a href={`/provider/${p.slug}`} class="card" style="text-decoration: none;">
+          <div style="font-weight: 600; margin-bottom: 0.2rem;">{p.name}</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">{p.billing.join(' · ')}</div>
+          <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.25rem;">{p.regions.slice(0, 2).join(', ')}{p.regions.length > 2 ? ` +${p.regions.length - 2}` : ''}</div>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <section style="margin-top: 2.5rem;">
+    <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">Popular Comparisons</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.75rem;">
+      <a href="/compare/runpod-vs-vast" class="card" style="text-decoration: none;">
+        <div style="font-weight: 600;">RunPod vs Vast.ai</div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">Most popular comparison</div>
+      </a>
+      <a href="/gpu-compare/h100-80gb-sxm-vs-a100-80gb-sxm" class="card" style="text-decoration: none;">
+        <div style="font-weight: 600;">H100 vs A100</div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">When the upgrade pays off</div>
+      </a>
+      <a href="/use-case/stable-diffusion-xl" class="card" style="text-decoration: none;">
+        <div style="font-weight: 600;">GPU for SDXL</div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">Stable Diffusion XL inference</div>
+      </a>
+      <a href="/use-case/llm-inference-70b" class="card" style="text-decoration: none;">
+        <div style="font-weight: 600;">GPU for 70B LLMs</div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">Min 140GB VRAM required</div>
+      </a>
+    </div>
+  </section>
+
+  <section style="margin-top: 2.5rem; padding: 1.5rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px;">
+    <h2 style="font-size: 1.1rem; margin-bottom: 0.75rem;">Public Pricing API</h2>
+    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+      All pricing data is freely available at <code>/api/prices.json</code>. No auth required. Updated weekly.
+      Licensed CC-BY — use it in your tools, cite PriceGPU.
+    </p>
+    <a href="/api/prices.json" style="font-family: monospace; font-size: 0.85rem; color: var(--accent);">
+      GET https://pricegpu.com/api/prices.json →
+    </a>
+  </section>
+</Layout>

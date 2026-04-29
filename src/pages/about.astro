@@ -1,0 +1,67 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { buildTitle, buildDescription, buildCanonical, buildBreadcrumbs } from '../lib/seo.ts';
+import { getProviders, getGPUs } from '../lib/pricing.ts';
+
+const providers = getProviders();
+const gpus = getGPUs();
+const ownerName = import.meta.env.OWNER_NAME || '[Site Owner]';
+
+const title = buildTitle(['About PriceGPU']);
+const description = buildDescription('PriceGPU aggregates cloud GPU rental pricing across 15+ providers. Learn about our methodology, data freshness, and team.');
+const canonical = buildCanonical('/about');
+const schemas = [buildBreadcrumbs([{ name: 'Home', url: '/' }, { name: 'About', url: '/about' }])];
+---
+
+<Layout {title} {description} {canonical} {schemas}>
+  <nav class="breadcrumb">
+    <a href="/">Home</a><span>/</span><span>About</span>
+  </nav>
+
+  <h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 1.5rem;">About PriceGPU</h1>
+
+  <div class="prose">
+    <p>
+      PriceGPU is a programmatic price comparison tool for cloud GPU rentals. It tracks pricing from {providers.length} providers
+      across {gpus.length} GPU models, refreshed weekly via automated scrapers.
+    </p>
+
+    <h2>What we do</h2>
+    <p>
+      Every Monday at 03:00 UTC, our scrapers visit each provider's pricing page and extract GPU rental rates.
+      The data is normalized, validated against a JSON schema, and committed to our public GitHub repository.
+      Pages are rebuilt and deployed to Cloudflare Pages automatically.
+    </p>
+
+    <h2>What we don't do</h2>
+    <ul>
+      <li>We do not present scraped prices as authoritative. Every price table includes a "last verified" date and links to the source.</li>
+      <li>We do not invent specs. All GPU specs (VRAM, TFLOPS, architecture) come from official NVIDIA/AMD datasheets.</li>
+      <li>We do not accept paid placement. Provider ordering in tables is by price only.</li>
+      <li>We do not track users. Analytics use Umami (self-hosted, no cookies, GDPR-compliant).</li>
+    </ul>
+
+    <h2>Coverage</h2>
+    <p>Current providers: {providers.map((p) => p.name).join(', ')}.</p>
+
+    <h2>Affiliate disclosure</h2>
+    <p>
+      PriceGPU earns referral commissions from some providers when you click a "Rent →" or "Try [Provider]" link.
+      This does not affect pricing data, table ordering, or editorial content.
+      See our <a href="/disclosure">full affiliate disclosure</a>.
+    </p>
+
+    <h2>Public data</h2>
+    <p>
+      All pricing data is available via the <a href="/api/prices.json">public JSON API</a>,
+      licensed under CC-BY-4.0. You may use it freely — attribution to pricegpu.com required.
+    </p>
+
+    <h2>Editorial</h2>
+    <p>
+      Data is compiled by automated scrapers. Editorial review by {ownerName}.
+      For corrections or provider additions, open an issue on the
+      <a href="https://github.com/fabioperrone/pricegpu" rel="noopener">GitHub repository</a>.
+    </p>
+  </div>
+</Layout>
