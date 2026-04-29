@@ -1,0 +1,42 @@
+{
+  "scraped_at": "2026-04-29T03:00:00Z",
+  "scraper_version": "1.0.0",
+  "items": [
+    {
+      "gpu_slug": "rtx-4090",
+      "configuration": "1x RTX 4090",
+      "price_usd_per_hour": 0.24,
+      "billing": "per-minute",
+      "availability": "on-demand",
+      "region": "distributed",
+      "deal_url": "https://salad.com/pricing"
+    },
+    {
+      "gpu_slug": "rtx-4080",
+      "configuration": "1x RTX 4080",
+      "price_usd_per_hour": 0.17,
+      "billing": "per-minute",
+      "availability": "on-demand",
+      "region": "distributed",
+      "deal_url": "https://salad.com/pricing"
+    },
+    {
+      "gpu_slug": "rtx-3090",
+      "configuration": "1x RTX 3090",
+      "price_usd_per_hour": 0.13,
+      "billing": "per-minute",
+      "availability": "on-demand",
+      "region": "distributed",
+      "deal_url": "https://salad.com/pricing"
+    },
+    {
+      "gpu_slug": "a100-80gb-pcie",
+      "configuration": "1x A100 PCIe 80GB",
+      "price_usd_per_hour": 0.89,
+      "billing": "per-minute",
+      "availability": "on-demand",
+      "region": "distributed",
+      "deal_url": "https://salad.com/pricing"
+    }
+  ]
+}

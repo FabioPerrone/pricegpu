@@ -1,0 +1,51 @@
+{
+  "scraped_at": "2026-04-29T03:00:00Z",
+  "scraper_version": "1.0.0",
+  "items": [
+    {
+      "gpu_slug": "h100-80gb-sxm",
+      "configuration": "1x H100 SXM",
+      "price_usd_per_hour": 3.99,
+      "billing": "per-millisecond",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://fal.ai/pricing"
+    },
+    {
+      "gpu_slug": "a100-80gb-sxm",
+      "configuration": "1x A100 SXM 80GB",
+      "price_usd_per_hour": 2.99,
+      "billing": "per-millisecond",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://fal.ai/pricing"
+    },
+    {
+      "gpu_slug": "rtx-4090",
+      "configuration": "1x RTX 4090",
+      "price_usd_per_hour": 0.89,
+      "billing": "per-millisecond",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://fal.ai/pricing"
+    },
+    {
+      "gpu_slug": "l40s",
+      "configuration": "1x L40S",
+      "price_usd_per_hour": 1.79,
+      "billing": "per-millisecond",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://fal.ai/pricing"
+    },
+    {
+      "gpu_slug": "t4",
+      "configuration": "1x T4",
+      "price_usd_per_hour": 0.55,
+      "billing": "per-millisecond",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://fal.ai/pricing"
+    }
+  ]
+}
