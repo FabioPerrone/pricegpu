@@ -1,0 +1,28 @@
+name: Submit Sitemap
+
+on:
+  schedule:
+    - cron: '0 9 * * 0'
+  workflow_dispatch:
+
+jobs:
+  submit:
+    name: Submit sitemap to Google & Bing
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: |
+          SITEMAP_URL="https://pricegpu.com/sitemap.xml"
+          curl -s -o /dev/null -w "Bing: %{http_code}" \
+            -X POST "https://ssl.bing.com/webmaster/api.svc/json/SubmitSitemap?apikey=${{ secrets.BING_WEBMASTER_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"siteUrl\":\"https://pricegpu.com/\",\"sitemap\":\"${SITEMAP_URL}\"}"
+          echo ""

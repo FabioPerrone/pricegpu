@@ -1,0 +1,46 @@
+name: Revenue Sync
+
+on:
+  schedule:
+    - cron: '0 9 * * 3'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    name: Sync revenue data
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: |
+          node --input-type=module <<'EOF'
+          import { writeFileSync, existsSync, readFileSync } from 'fs';
+          const OUTPUT = 'data/revenue.json';
+          const existing = existsSync(OUTPUT) ? JSON.parse(readFileSync(OUTPUT, 'utf8')) : {};
+          const entry = {
+            ...existing,
+            lastSync: new Date().toISOString(),
+            status: 'placeholder',
+            note: 'Revenue sync not yet configured',
+          };
+          writeFileSync(OUTPUT, JSON.stringify(entry, null, 2) + '\n');
+          EOF
+      - run: |
+          git config user.email "bot@pricegpu.com"
+          git config user.name "PriceGPU Bot"
+          git add data/revenue.json
+          if git diff --cached --quiet; then
+            echo "No changes."
+          else
+            git commit -m "chore: update revenue data $(date -u '+%Y-%m-%d')"
+            git push
+          fi

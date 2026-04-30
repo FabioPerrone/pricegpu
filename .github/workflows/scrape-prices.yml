@@ -1,0 +1,74 @@
+name: Scrape GPU Prices
+
+on:
+  schedule:
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    name: Scrape all providers
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx playwright install chromium --with-deps
+      - run: npx tsx scripts/scrape/runpod.ts
+        continue-on-error: true
+      - run: npx tsx scripts/scrape/vast.ts
+        continue-on-error: true
+      - run: npx tsx scripts/scrape/lambda.ts
+        continue-on-error: true
+      - run: npx tsx scripts/scrape/paperspace.ts
+        continue-on-error: true
+      - run: npx tsx scripts/scrape/modal.ts
+        continue-on-error: true
+      - run: npx tsx scripts/scrape/coreweave.ts
+        continue-on-error: true
+      - run: npx tsx scripts/scrape/tensordock.ts
+        continue-on-error: true
+      - run: npx tsx scripts/scrape/genesis.ts
+        continue-on-error: true
+      - run: npx tsx scripts/scrape/hyperstack.ts
+        continue-on-error: true
+      - run: npx tsx scripts/scrape/together.ts
+        continue-on-error: true
+      - run: npx tsx scripts/scrape/replicate.ts
+        continue-on-error: true
+      - run: npx tsx scripts/scrape/fal.ts
+        continue-on-error: true
+      - run: npx tsx scripts/scrape/salad.ts
+        continue-on-error: true
+      - run: npx tsx scripts/scrape/fluidstack.ts
+        continue-on-error: true
+      - run: npx tsx scripts/scrape/datacrunch.ts
+        continue-on-error: true
+      - run: |
+          git config user.email "bot@pricegpu.com"
+          git config user.name "PriceGPU Bot"
+          git add data/prices/
+          if git diff --cached --quiet; then
+            echo "No price changes."
+          else
+            git commit -m "chore: update GPU prices $(date -u '+%Y-%m-%d')"
+            git push
+          fi
+      - uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'generate-content.yml',
+              ref: 'main',
+            });

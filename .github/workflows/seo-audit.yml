@@ -1,0 +1,40 @@
+name: SEO Audit & Indexation Check
+
+on:
+  schedule:
+    - cron: '0 9 1 * *'
+  workflow_dispatch:
+
+jobs:
+  audit:
+    name: Audit indexation via Google Search Console
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - id: audit
+        run: npx tsx scripts/audit-indexation.ts
+        env:
+          GOOGLE_SEARCH_CONSOLE_SA_JSON: ${{ secrets.GOOGLE_SEARCH_CONSOLE_SA_JSON }}
+        continue-on-error: true
+      - if: steps.audit.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const today = new Date().toISOString().split('T')[0];
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `SEO Audit: issues found (${today})`,
+              body: `Run date: ${today}\n\nSee [workflow](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`,
+              labels: ['seo', 'automated'],
+            });
