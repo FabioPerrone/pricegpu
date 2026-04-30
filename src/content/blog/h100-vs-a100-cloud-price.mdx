@@ -1,0 +1,118 @@
+---
+title: "H100 vs A100 Cloud Pricing: When the Upgrade Pays Off"
+description: "A quantitative comparison of H100 SXM and A100 80GB cloud pricing across LLM training, inference serving, and fine-tuning workloads — including break-even analysis by task type."
+pubDate: 2026-04-20
+slug: h100-vs-a100-cloud-price
+canonical_url: https://pricegpu.com/blog/h100-vs-a100-cloud-price
+tags: [h100, a100, pricing, training, inference, llm]
+---
+
+The H100 SXM costs roughly 60–70% more per hour than an A100 80GB on most cloud platforms. Whether that premium is worth it depends entirely on what you're running. This post works through the math for the three workloads where GPU choice matters most: LLM pre-training, inference serving, and fine-tuning.
+
+## Hardware Specs: What You're Actually Paying For
+
+Before comparing prices, it's worth being precise about what differentiates these two GPUs.
+
+| Spec | A100 SXM 80GB | H100 SXM 80GB |
+|---|---|---|
+| FP16 (Tensor Core) TFLOPS | 312 | 989 |
+| FP8 TFLOPS | — | 1,979 |
+| BF16 TFLOPS | 312 | 989 |
+| INT8 TOPS | 624 | 3,958 |
+| GPU Memory | 80 GB HBM2e | 80 GB HBM3 |
+| Memory Bandwidth | 2,000 GB/s | 3,350 GB/s |
+| NVLink Bandwidth | 600 GB/s | 900 GB/s |
+| TDP | 400 W | 700 W |
+
+The FP16 headline numbers (312 vs 989 TFLOPS) show a 3.2× raw compute advantage for the H100. In practice, real-world speedups on transformer workloads land between 1.5× and 2.5× depending on model size, batch size, and how well the workload saturates memory bandwidth versus compute.
+
+The H100's FP8 capability (supported in Transformer Engine via `TransformerLayer` with `fp8=True`) is the most significant architectural difference. FP8 can deliver another 2× over BF16 for large-batch training, effectively making the H100 up to 6× faster than the A100 on throughput-bound training runs — but only when your framework and model support it.
+
+## Cloud Pricing Reality
+
+Prices shift, but the ranges below reflect typical list pricing across major platforms in early 2026:
+
+| GPU | Typical On-Demand Range | Common Providers |
+|---|---|---|
+| A100 80GB SXM | $1.49 – $2.49 / hr | Lambda, CoreWeave, vast.ai, RunPod |
+| H100 SXM 80GB | $2.49 – $3.99 / hr | CoreWeave, Lambda, Crusoe, RunPod |
+
+For multi-GPU configurations, these prices scale roughly linearly. An 8×H100 node runs $20–$32/hr; an 8×A100 node runs $12–$20/hr. The per-node delta of $8–$12/hr matters at training timescales.
+
+## LLM Pre-Training
+
+Pre-training is the workload where the H100 premium is most likely to pay off. Token throughput is the key metric: higher tokens/second means fewer GPU-hours per training run.
+
+A rough empirical benchmark for a 7B parameter model in BF16 with FlashAttention-2:
+
+- **A100 SXM 80GB**: ~120,000 tokens/sec per GPU (8k context)
+- **H100 SXM 80GB**: ~220,000 tokens/sec per GPU (8k context, Transformer Engine BF16)
+- **H100 SXM 80GB with FP8**: ~300,000 tokens/sec per GPU
+
+Speedup ratio H100/A100: ~1.83× in BF16, ~2.5× with FP8.
+
+At $2.00/hr (A100) vs $3.20/hr (H100):
+
+- Cost per billion tokens on A100: $2.00 / (120,000 × 3600 / 1e9) ≈ **$0.046**
+- Cost per billion tokens on H100 BF16: $3.20 / (220,000 × 3600 / 1e9) ≈ **$0.040**
+- Cost per billion tokens on H100 FP8: $3.20 / (300,000 × 3600 / 1e9) ≈ **$0.030**
+
+**The H100 wins on cost per token in pre-training**, even at a higher hourly rate. The advantage compounds at 70B+ scale where the faster NVLink bandwidth reduces cross-GPU communication overhead.
+
+## Inference Serving
+
+Inference is more nuanced because the right metric shifts from throughput to latency, and latency characteristics differ by use case.
+
+### Batch Inference (Throughput Mode)
+
+For offline batch inference — reranking, embeddings at scale, bulk generation — throughput is still the primary metric. The analysis mirrors pre-training: H100's higher compute and memory bandwidth wins on cost per token.
+
+### Online Inference (Latency Mode)
+
+Interactive serving with small batch sizes (1–8 concurrent requests) is where the H100 advantage shrinks. At small batch sizes, inference is typically **memory-bandwidth bound**, not compute-bound. The H100 has 1.68× more memory bandwidth than the A100 (3,350 vs 2,000 GB/s), which gives a 1.68× latency advantage — not the 3.2× you'd expect from raw FLOPS.
+
+| Batch Size | H100 Speedup vs A100 | Cost Justified? |
+|---|---|---|
+| 1 (single user) | ~1.5–1.7× | Only if latency SLA requires it |
+| 8 | ~1.8–2.0× | Borderline — check your pricing tier |
+| 32+ | ~2.0–2.5× | Yes, H100 wins on $/token |
+| 128+ | ~2.2–2.8× | Yes, H100 wins clearly |
+
+For a latency-sensitive endpoint where p50 TTFT must stay under 300ms, the H100 may be the only option at large context lengths. For a batch job without SLAs, run the math on tokens per dollar.
+
+## Fine-Tuning
+
+Fine-tuning sits between pre-training and inference in terms of GPU utilization patterns:
+
+- **Full fine-tuning** (all weights, large batch): behaves like pre-training. H100 wins on $/sample.
+- **LoRA / QLoRA** on a single GPU: often memory-bandwidth bound with small effective batch sizes. H100 advantage is smaller (~1.5×). At an ~60% price premium, this is often a wash or slight A100 advantage.
+- **FSDP or DeepSpeed multi-GPU fine-tuning**: scales similarly to pre-training. H100 wins.
+
+For teams running 50-100 fine-tuning jobs/month on a single GPU, the A100 is often the better choice unless you're on a tight wall-clock deadline.
+
+## Workload Break-Even Summary
+
+| Workload | H100 Speedup | H100 Cost Premium | H100 Cheaper? |
+|---|---|---|---|
+| LLM pre-training (BF16) | 1.8× | ~60% | Yes |
+| LLM pre-training (FP8) | 2.5× | ~60% | Yes, by ~35% |
+| Batch inference (large batch) | 2.0–2.5× | ~60% | Yes |
+| Online inference (bs=1–4) | 1.5–1.7× | ~60% | No — A100 cheaper |
+| LoRA fine-tuning (single GPU) | 1.4–1.6× | ~60% | Roughly equal |
+| Full fine-tuning (multi-GPU) | 1.8–2.2× | ~60% | Yes |
+
+## Practical Decision Guide
+
+Use the H100 when:
+- You're training from scratch or doing continued pre-training on multi-GPU clusters
+- Batch inference throughput is your primary cost driver
+- You need FP8 precision (check PyTorch/TE support for your architecture first)
+- Wall-clock time has a dollar value (team time, launch deadlines)
+
+Use the A100 when:
+- Serving low-concurrency endpoints (fewer than 8–16 simultaneous requests)
+- Running many short fine-tuning experiments where iteration speed matters more than throughput
+- You're on a tight per-hour budget and the job is not throughput-bound
+- The provider's H100 availability is limited and you'd be waiting in queue
+
+The A100's biggest remaining advantage is price-per-hour at small batch sizes and wide availability. As H100 supply increases and prices normalize, that window will narrow — but for interactive inference workloads today, it remains the more cost-efficient choice.

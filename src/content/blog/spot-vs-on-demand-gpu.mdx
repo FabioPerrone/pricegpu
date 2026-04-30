@@ -1,0 +1,142 @@
+---
+title: "Spot vs On-Demand GPU Instances: A Practical Guide"
+description: "When to use preemptible (spot) GPU instances versus on-demand for ML workloads. Covers cost savings, interruption risk, checkpointing strategy, and provider-specific behavior."
+pubDate: 2026-04-22
+slug: spot-vs-on-demand-gpu
+canonical_url: https://pricegpu.com/blog/spot-vs-on-demand-gpu
+tags: [spot, preemptible, on-demand, cost, training, inference, runpod, vast-ai, lambda]
+---
+
+Spot (preemptible) GPU instances can cut your compute bill by 50–80% compared to on-demand rates. They can also kill a 20-hour training run at hour 19 with two minutes of warning. The decision isn't about whether spot is "good" — it's about matching the instance type to the interruption tolerance of your specific workload.
+
+## What Spot Actually Means
+
+Terminology varies by provider, but the concept is consistent: spot instances run on spare capacity. When demand spikes or the provider needs that capacity back, your instance is terminated — usually with a 30-second to 2-minute warning depending on the platform.
+
+| Provider | Term Used | Warning Time | Typical Discount |
+|---|---|---|---|
+| AWS | Spot Instances | 2 minutes | 60–90% off on-demand |
+| GCP | Spot VMs | 30 seconds | ~60–91% off |
+| Azure | Spot VMs | 30 seconds | Up to 90% off |
+| RunPod | Spot Pods | Varies | ~50–70% off on-demand |
+| Vast.ai | Interruptible | Varies | ~40–70% off |
+| Lambda Labs | Not offered | — | — |
+
+Lambda and some other ML-focused clouds don't offer spot pricing — they reserve capacity only through on-demand or reserved contracts. This matters when choosing a provider for spot-dependent workflows.
+
+## Cost Savings: The Actual Numbers
+
+To make this concrete, consider an A100 80GB:
+
+- On-demand on RunPod: ~$1.89/hr
+- Spot on RunPod: ~$0.79/hr
+- Savings: 58%
+
+For a 70B model pre-training run of 50,000 GPU-hours:
+- On-demand cost: $94,500
+- Spot cost (58% discount): ~$39,690
+- Savings: ~$54,810
+
+That's real money. The question is whether interruptions during that run cost you more in engineering time and lost compute than the discount is worth.
+
+## Workloads That Work Well on Spot
+
+### Checkpoint-Resumable Training
+
+Long training runs are the canonical spot use case — with one mandatory condition: **checkpoint-resumable from any step**. If your training job can save state every N steps and restart cleanly from that checkpoint, spot interruptions become a minor inconvenience rather than a catastrophe.
+
+Implementation checklist:
+- Save checkpoints every 15–30 minutes (not just at epoch boundaries)
+- Store checkpoints to durable storage (S3, GCS, or an NFS mount — not local disk, which disappears with the instance)
+- Handle SIGTERM in your training loop to trigger a final checkpoint before shutdown
+- Use a job scheduler (SkyPilot, Runai, or a simple shell loop) to relaunch after interruption
+
+PyTorch Lightning's `ModelCheckpoint` with `every_n_train_steps` and Hugging Face `TrainingArguments` with `save_steps` both handle this cleanly. The key is that your checkpoint includes optimizer state, scheduler state, and the exact step count — not just model weights.
+
+### Batch Offline Inference
+
+Inference jobs that process a dataset asynchronously (embedding a corpus, batch scoring, document processing) are excellent spot candidates:
+
+- Work is naturally parallelizable and restartable
+- Results can be written to an object store as they complete
+- Partial progress is not lost if you track which items have been processed
+- No SLA on completion time
+
+Use a work queue (SQS, Pub/Sub, or even a simple database table with job status) rather than sharding a flat file, so a preempted worker doesn't lose progress.
+
+### Hyperparameter Search
+
+Individual HPO trials are usually short (minutes to hours) and inherently expendable. If a trial gets interrupted, the search algorithm simply treats it as a failed trial or retries it. Tools like Optuna and Ray Tune support this natively. Spot instances make HPO dramatically cheaper.
+
+### Data Preprocessing
+
+GPU-accelerated preprocessing (tokenization at scale, image transforms, feature extraction) fits the spot pattern perfectly: embarrassingly parallel, checkpointable at the file level, no external-facing SLA.
+
+## Workloads That Don't Work on Spot
+
+### Production Inference Serving
+
+This is the clearest "no" for spot. A preempted inference server means:
+- Immediate user-facing errors or timeouts
+- No warning for downstream systems
+- Potential partial responses in streaming scenarios
+
+If you're serving any external traffic — even internal tools with human users — you need on-demand instances. Reliability requirements dominate cost considerations here.
+
+### Distributed Training Without Fault Tolerance
+
+FSDP and DeepSpeed training across 16+ GPUs is technically checkpoint-resumable, but a preemption event requires restarting *all* nodes, not just the affected one. Coordination overhead and partial communication timeouts can corrupt state if your training loop doesn't handle SIGTERM properly across all ranks. Unless you've explicitly tested interruption recovery on your distributed training stack, treat multi-node spot as risky.
+
+### Short Jobs Under 30 Minutes
+
+The expected-value math inverts for very short jobs. If a job takes 20 minutes and spot interruption risk is, say, 5% per hour, the probability of interruption is low — but if it does happen, you lose the full job plus restart overhead. On-demand is often fine for jobs where the total runtime is under an hour.
+
+### Jobs With External State Dependencies
+
+If your job writes to a database, sends webhook events, or mutates any shared state mid-run, interruption leaves that state inconsistent. Spot is only clean when your job is idempotent or append-only.
+
+## Decision Matrix
+
+| Workload Type | Restartable? | Has SLA? | External State? | Use Spot? |
+|---|---|---|---|---|
+| LLM pre-training (checkpointed) | Yes | No | No | **Yes** |
+| LLM pre-training (no checkpoints) | No | No | No | No |
+| Batch offline inference | Yes | No | No | **Yes** |
+| HPO / experiment sweeps | Yes | No | No | **Yes** |
+| Online inference serving | N/A | Yes | No | **No** |
+| Short training run (&lt;1 hr) | Yes | No | No | Optional |
+| Multi-node distributed training | Yes* | No | No | Risky |
+| Data preprocessing pipelines | Yes | No | No | **Yes** |
+| Fine-tuning (single GPU, &lt;4 hr) | Yes | No | No | **Yes** |
+| API serving with streaming | N/A | Yes | Yes | **No** |
+
+*Multi-node spot is possible with frameworks like SkyPilot that handle node re-provisioning, but requires explicit setup.
+
+## Engineering Spot Into Your Training Loop
+
+The minimum viable spot-tolerant training setup in PyTorch:
+
+```python
+import signal
+import sys
+
+def handle_sigterm(signum, frame):
+    trainer.save_checkpoint("emergency_checkpoint.pt")
+    sys.exit(0)
+
+signal.signal(signal.SIGTERM, handle_sigterm)
+```
+
+Pair this with a launcher script that detects non-zero exit codes and re-queues the job. SkyPilot automates this across providers with `--use-spot` and built-in auto-recovery.
+
+## Provider-Specific Notes
+
+**RunPod Spot**: Spot pods share infrastructure with on-demand users. Interruption frequency varies by GPU type and time of day. RTX 4090 spot is generally more stable than H100 spot due to higher on-demand demand for H100s.
+
+**Vast.ai**: Interruptible instances are priced by individual machine owners. Interruption behavior varies more than on hyperscalers. Vet reliability scores before committing large jobs.
+
+**AWS Spot**: Most predictable interruption modeling (EC2 Spot interruption history is publicly available). `p3`, `p4`, and `p5` instance families have distinct interruption frequency profiles. `p4d.24xlarge` (8×A100) spot has historically been less frequently interrupted than smaller instance types due to lower demand volatility.
+
+## Bottom Line
+
+The 50–80% cost reduction from spot is significant enough that most ML teams should default to spot for any training workload that's been made checkpoint-resumable. The engineering investment to add proper checkpointing is usually a few hours of work and pays back immediately on the first large training run. For inference serving, stay on on-demand — the reliability requirement makes the cost difference irrelevant.
