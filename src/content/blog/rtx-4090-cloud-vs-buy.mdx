@@ -1,0 +1,196 @@
+---
+title: "RTX 4090 Cloud vs Buying: The Break-Even Analysis"
+description: "A concrete financial analysis of renting versus buying an RTX 4090. Covers purchase price, electricity, depreciation, utilization rate, and the exact break-even point in GPU-hours."
+pubDate: 2026-04-24
+slug: rtx-4090-cloud-vs-buy
+canonical_url: https://pricegpu.com/blog/rtx-4090-cloud-vs-buy
+tags: [rtx-4090, cloud, cost, buy-vs-rent, break-even, home-lab]
+---
+
+The RTX 4090 is the most capable consumer GPU for ML work — 24 GB GDDR6X, 82.6 TFLOPS FP16, and a street price around $1,800–$2,000. Cloud rental runs $0.44–$0.79/hr depending on provider and whether you're on spot or on-demand. The math for when to buy versus rent is straightforward once you account for all the costs on both sides.
+
+## The Full Cost of Ownership
+
+Most "buy vs cloud" comparisons undercount the true cost of hardware ownership. Here's what actually goes into it:
+
+### Purchase Price
+
+A retail RTX 4090 Founders Edition or third-party equivalent costs approximately $1,800–$2,000 in early 2026. Using **$1,900** as the base price.
+
+### Electricity
+
+The RTX 4090 has a TDP of 450W. In practice under sustained ML workload (not gaming), expect 400–450W actual draw at the GPU plus system overhead (CPU, RAM, storage, cooling):
+
+- GPU draw at 100% load: ~450 W
+- Rest of system: ~150 W (CPU + RAM + NVMe + motherboard)
+- **Total system draw: ~600 W**
+
+At a US average residential electricity rate of $0.17/kWh (varies widely — use your actual rate):
+
+```
+Power cost per hour = 0.600 kW × $0.17/kWh = $0.102/hr
+```
+
+Over 8,760 hours/year at 100% utilization (unrealistic, but useful for bounding):
+- Annual electricity cost at 100% util: $893/year
+- At 50% utilization: $447/year
+
+If you're in a high-cost grid region (California, New York, parts of Europe), your rate might be $0.25–$0.40/kWh, which significantly changes the math.
+
+### Depreciation
+
+GPU hardware depreciates. The RTX 4090 launched in October 2022 and has held value better than most GPUs due to constrained supply and persistent demand from the ML community. A reasonable depreciation model:
+
+- **Straight-line over 4 years**: $1,900 / 4 = $475/year = **$0.054/hr** (at 8,760 hr/year)
+- **Straight-line over 3 years**: $1,900 / 3 = $633/year = **$0.072/hr**
+
+This assumes zero salvage value at end of life. In practice, used 4090s still sell for meaningful amounts, so actual depreciation may be lower.
+
+### Maintenance and Incidentals
+
+This is usually ignored but shouldn't be:
+
+- Thermal paste replacement every 2–3 years: ~$10–20 (plus 1–2 hours of time)
+- Risk of hardware failure (GPU failure rate is low but non-zero): hard to quantify, but out-of-warranty repair or replacement falls entirely on you
+- Server-grade cooling if running 24/7 at high load: additional infrastructure cost
+
+For simplicity, model this as $100–200/year in amortized maintenance.
+
+### Total Owned Cost Per Hour
+
+Assuming 50% utilization (4,380 hrs/year of active use):
+
+| Cost Component | Annual Cost | Per Active Hour |
+|---|---|---|
+| Depreciation (4-year) | $475 | $0.108 |
+| Electricity (50% util) | $447 | $0.102 |
+| Maintenance | $150 | $0.034 |
+| **Total** | **$1,072** | **$0.245/hr** |
+
+At 75% utilization (6,570 hrs/year active):
+
+| Cost Component | Annual Cost | Per Active Hour |
+|---|---|---|
+| Depreciation (4-year) | $475 | $0.072 |
+| Electricity (75% util) | $670 | $0.102 |
+| Maintenance | $150 | $0.023 |
+| **Total** | **$1,295** | **$0.197/hr** |
+
+The electricity cost per active hour stays constant regardless of utilization (you only pay for power when it's running). Depreciation and maintenance cost per active hour *decrease* as utilization increases, because you're spreading fixed costs over more productive hours.
+
+## Cloud Rental Costs
+
+RTX 4090 cloud pricing in early 2026:
+
+| Provider | On-Demand ($/hr) | Spot/Interruptible ($/hr) |
+|---|---|---|
+| RunPod | $0.74 | $0.34–0.44 |
+| Vast.ai | $0.44–0.65 | $0.29–0.44 |
+| CoreWeave | $0.76 | Not available |
+| Latitude.sh | $0.66 | Not available |
+
+Using **$0.59/hr** as a reasonable on-demand midpoint and **$0.38/hr** as a spot midpoint.
+
+Cloud costs include no electricity, no hardware risk, no depreciation, and no capital outlay — you pay only for what you use.
+
+## Break-Even Analysis
+
+### Break-Even in GPU-Hours (Capital Recovery)
+
+The simplest framing: how many hours must you use a purchased GPU before the total cost of ownership matches what you'd have spent renting?
+
+Setting up the equation where owned cost = rental cost:
+
+```
+Capital cost + (electricity + maintenance) × hours = rental rate × hours
+
+$1,900 + $0.136/hr × hours = $0.59/hr × hours
+
+$1,900 = ($0.59 - $0.136) × hours
+
+$1,900 = $0.454 × hours
+
+hours = 4,185
+```
+
+**Break-even at approximately 4,185 GPU-hours** compared to on-demand cloud at $0.59/hr.
+
+At spot pricing ($0.38/hr):
+
+```
+$1,900 = ($0.38 - $0.136) × hours
+$1,900 = $0.244 × hours
+hours = 7,787
+```
+
+Against spot pricing, break-even is approximately **7,787 GPU-hours**.
+
+### Break-Even in Time (Utilization-Dependent)
+
+| Daily Usage | Hours to Break Even | Time to Break Even (vs on-demand) |
+|---|---|---|
+| 2 hr/day | 4,185 hr | ~5.7 years |
+| 4 hr/day | 4,185 hr | ~2.9 years |
+| 8 hr/day | 4,185 hr | ~1.4 years |
+| 16 hr/day | 4,185 hr | ~8.7 months |
+| 24 hr/day | 4,185 hr | ~5.8 months |
+
+Compared to spot cloud at $0.38/hr:
+
+| Daily Usage | Hours to Break Even | Time to Break Even (vs spot) |
+|---|---|---|
+| 4 hr/day | 7,787 hr | ~5.3 years |
+| 8 hr/day | 7,787 hr | ~2.7 years |
+| 16 hr/day | 7,787 hr | ~1.3 years |
+| 24 hr/day | 7,787 hr | ~10.8 months |
+
+## Factors That Shift the Break-Even
+
+### Utilization Rate
+
+This is the dominant variable. The GPU purchase only makes sense if you're actually using it. A researcher who uses a GPU 4 hours/day, 5 days/week accumulates about 1,040 GPU-hours/year — reaching the on-demand break-even in over 4 years, by which point a 4090 is likely obsolete.
+
+A full-time engineer running experiments 16 hours/day hits 5,840 hours/year and breaks even in under a year. The math favors buying only at high utilization rates.
+
+### Your Electricity Rate
+
+The break-even calculation above uses $0.17/kWh. If you're paying $0.30/kWh:
+
+```
+Electricity cost = 0.600 kW × $0.30/kWh = $0.180/hr
+New owned variable cost = $0.180 + $0.034 maintenance = $0.214/hr
+Break-even = $1,900 / ($0.59 - $0.214) = 5,053 hours
+```
+
+High electricity rates push break-even significantly further out.
+
+### Opportunity Cost of Capital
+
+$1,900 in an index fund earning ~7%/year earns ~$133/year. This is a real cost of the purchase that most analyses omit. Including it adds ~$0.030/hr to the effective owned cost, shifting break-even by a few hundred hours.
+
+### The Next GPU Generation
+
+The RTX 5090 is already available. Buying a 4090 now means locking into hardware that will be a generation behind. If your workload benefits from the 5090's improvements (higher memory bandwidth, better FP8 support), the effective depreciation timeline shortens.
+
+## When Buying Clearly Wins
+
+- Daily utilization above 12 hours (experiments running overnight, automated pipelines)
+- Electricity rate below $0.15/kWh
+- 2+ years of expected use at high utilization before upgrade
+- Workload requires local data (privacy, latency, data transfer costs)
+- You can deduct the purchase as a business expense (accelerated depreciation changes the math significantly)
+
+## When Renting Clearly Wins
+
+- Variable or unpredictable usage (some months heavy, some light)
+- Need to scale to multiple GPUs occasionally
+- Utilization under 6 hours/day
+- Access to spot pricing at $0.40/hr or less
+- Need hardware newer than what you can afford to buy
+- Short project timeline (3–6 months) — renting at $0.59/hr × 1,000 hours = $590, well under purchase price
+
+## The Hybrid Approach
+
+Most ML engineers end up here: own one GPU for fast iteration and local experimentation (short runs, debugging, quick inference), and rent for long training runs and burst capacity. This gives the latency and convenience benefits of local hardware without committing the capital to a configuration that can handle your largest jobs.
+
+The break-even math above assumes all usage is productive. In practice, local development use — loading notebooks, quick tests, debugging — has a high convenience value that cloud rental doesn't easily replicate.

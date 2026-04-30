@@ -1,0 +1,146 @@
+---
+title: "Choosing the Right GPU for LLM Inference: 7B to 405B"
+description: "A practical guide to GPU selection for serving large language models. Covers VRAM requirements, multi-GPU configs, and cheapest cloud options for models from 7B to 405B parameters."
+pubDate: 2026-04-26
+slug: llm-inference-gpu-guide
+canonical_url: https://pricegpu.com/blog/llm-inference-gpu-guide
+tags: [llm, inference, gpu, vram, serving, quantization, 7b, 70b, 405b]
+---
+
+The hardest constraint for LLM inference is VRAM: the entire model (or a quantized version of it) must fit in GPU memory before you generate a single token. Get the VRAM calculation wrong and your deployment either fails to start or runs so slowly that latency SLAs are impossible to meet.
+
+This guide covers the VRAM math, multi-GPU configurations, quantization options, and cheapest cloud options for common model sizes.
+
+## VRAM Requirements: The Core Calculation
+
+A model parameter stored in FP16 or BF16 occupies **2 bytes**. A parameter in FP32 occupies 4 bytes. In INT8 it's 1 byte, in FP8/INT4 it's 0.5 bytes (in theory; in practice, quantization libraries add overhead).
+
+Base model weight memory formula:
+
+```
+Model VRAM (GB) = Parameters (billions) × bytes_per_param / 1e9
+```
+
+For a 7B parameter model:
+- **FP16/BF16**: 7 × 2 = 14 GB
+- **INT8**: 7 × 1 = 7 GB
+- **4-bit (GPTQ/AWQ)**: 7 × 0.5 ≈ 3.5 GB + quantization overhead ≈ 4–5 GB
+
+But model weights aren't the only VRAM consumer during inference:
+
+- **KV cache**: Proportional to batch size × sequence length × num_layers × head_dim. At long contexts (32k–128k tokens) with large batches, this can equal or exceed model weight memory.
+- **Activation memory**: Relatively small for inference compared to training, but non-zero.
+- **Framework overhead**: ~1–2 GB for CUDA context, PyTorch allocator, etc.
+
+A practical rule of thumb: **budget 20–30% more VRAM than the raw weight calculation** to account for KV cache at moderate batch sizes and framework overhead.
+
+## Model-to-GPU Mapping
+
+### 7B Models (Llama 3.1 7B, Mistral 7B, Qwen2 7B)
+
+FP16 weights: **14 GB**. With overhead, you need at least 16 GB.
+
+The RTX 4090 (24 GB) is the minimum single-GPU option that leaves comfortable headroom for KV cache. The A10G (24 GB) and L4 (24 GB) are the data-center equivalents. For quantized serving (INT8 or 4-bit), a 16 GB GPU (A4000, RTX 4080) works but leaves little room for long contexts or large batches.
+
+**Best single-GPU choices for 7B**:
+- RTX 4090 (24 GB): Best throughput per dollar on consumer hardware
+- A10G (24 GB): Good for AWS SageMaker / EC2 g5 instances
+- L4 (24 GB): Good for GCP, lowest power draw in this tier
+
+### 13B Models (Llama 2 13B, CodeLlama 13B)
+
+FP16 weights: **26 GB**. Exceeds any single 24 GB GPU in FP16.
+
+Options:
+- **A6000 (48 GB)**: Single GPU, handles FP16 comfortably with room for KV cache
+- **A100 40 GB**: Tight — weights fit but KV cache headroom is limited at higher sequence lengths
+- **2× RTX 4090 (48 GB total)**: Works with tensor parallelism (vLLM supports this), but NVLink isn't available on consumer cards, so inter-GPU bandwidth is PCIe-limited. Expect latency overhead.
+- **4-bit quantized on 24 GB**: AWQ or GPTQ reduces to ~7–8 GB, making a single 4090 viable at the cost of some quality degradation.
+
+### 34B Models (CodeLlama 34B, Yi-34B)
+
+FP16 weights: **68 GB**. Requires multi-GPU or high-VRAM single GPU.
+
+- **A100 80 GB**: Fits in a single GPU with ~12 GB headroom. Best latency option.
+- **2× A6000 (96 GB total)**: Fits comfortably with tensor parallelism.
+- **2× RTX 4090 (48 GB)**: Too tight for FP16. Works with 4-bit quantization.
+
+### 70B Models (Llama 3.1 70B, Qwen2 72B, Mixtral 8×7B)
+
+FP16 weights: **140 GB** (for dense 70B). Requires multiple high-VRAM GPUs.
+
+Note: Mixtral 8×7B is a sparse MoE model. Active parameter count per token is ~12B, but all 56B parameters must reside in memory for fast routing. Effective VRAM requirement is ~90 GB in FP16.
+
+- **2× A100 80 GB (160 GB total)**: Handles dense 70B with comfortable margin
+- **H100 SXM 80 GB**: A single H100 fits 70B in FP16 if you're tight on the model weights, but you'll be right at the limit. Two H100s give you breathing room.
+- **4× A6000 (192 GB total)**: More affordable alternative for teams without H100 access
+- **8× RTX 4090 (192 GB total)**: Works with 4-bit quantization at 70B; in FP16 it's too tight across 8× 24GB = 192 GB after framework overhead.
+
+### 405B Models (Llama 3.1 405B)
+
+FP16 weights: **810 GB**. This is multi-node territory in FP16.
+
+- **8× H100 SXM (640 GB)**: Insufficient for FP16. Requires FP8 quantization, which brings weights to ~405 GB and fits with room to spare.
+- **8× H100 SXM with FP8**: Single node solution. This is how Meta recommends deploying 405B.
+- **16× A100 80 GB (1,280 GB)**: Multi-node, FP16. Higher latency due to network communication between nodes vs. NVLink within a node.
+- **BF16 with two 8×H100 nodes**: 1,280 GB total. High latency from inter-node communication makes this poor for interactive use; better for offline batch inference.
+
+## The Role of Quantization
+
+Quantization allows larger models to fit in smaller GPU configurations, trading some quality for dramatically reduced VRAM footprint. Practical options:
+
+| Method | Precision | VRAM Reduction | Quality Impact |
+|---|---|---|---|
+| BF16/FP16 | 16-bit | Baseline | None |
+| GPTQ | 4-bit | ~4× | Low (perplexity +0.1–0.5) |
+| AWQ | 4-bit | ~4× | Low to moderate |
+| bitsandbytes INT8 | 8-bit | ~2× | Minimal |
+| GGUF Q4_K_M | 4-bit | ~4× | Low |
+| GGUF Q8_0 | 8-bit | ~2× | Minimal |
+| FP8 (Transformer Engine) | 8-bit | ~2× | Minimal (hardware-assisted) |
+
+For production serving, AWQ and GPTQ with 4-bit quantization are mature enough for most use cases. The perplexity hit is measurable but small for most downstream tasks. If output quality is paramount (legal, medical, code generation), validate quantized outputs against your specific benchmarks before deploying.
+
+## Full GPU Selection Reference Table
+
+| Model Size | Precision | Min VRAM Needed | Minimum Config | Cheapest Cloud Option (est.) |
+|---|---|---|---|---|
+| 7B | FP16 | ~18 GB | RTX 4090 (24 GB) | RTX 4090 on Vast.ai ~$0.50/hr |
+| 7B | 4-bit | ~6 GB | RTX 3080 (10 GB) | Vast.ai low-tier GPU ~$0.15/hr |
+| 13B | FP16 | ~30 GB | A6000 (48 GB) | A6000 on RunPod ~$0.79/hr |
+| 13B | 4-bit | ~9 GB | RTX 4090 (24 GB) | RTX 4090 on Vast.ai ~$0.50/hr |
+| 34B | FP16 | ~75 GB | A100 80GB (single) | A100 80GB ~$1.89/hr |
+| 34B | 4-bit | ~20 GB | RTX 4090 (24 GB) | RTX 4090 on Vast.ai ~$0.50/hr |
+| 70B | FP16 | ~155 GB | 2× A100 80GB | 2× A100 80GB ~$3.78/hr |
+| 70B | 4-bit | ~40 GB | 2× RTX 4090 | 2× RTX 4090 on RunPod ~$1.48/hr |
+| 70B (MoE 8×7B) | FP16 | ~100 GB | 2× A6000 | 2× A6000 ~$1.58/hr |
+| 405B | FP8 | ~420 GB | 8× H100 SXM | 8× H100 on CoreWeave ~$25/hr |
+| 405B | 4-bit | ~210 GB | 4× A100 80GB | 4× A100 ~$7.56/hr |
+
+Cloud pricing estimates are approximate and vary by provider, region, and availability. Use PriceGPU to compare current rates.
+
+## Throughput vs. Latency Tradeoffs
+
+VRAM determines what fits; the throughput/latency tradeoff determines how you deploy it.
+
+**Latency-sensitive serving** (interactive chat, coding assistants):
+- Minimize time-to-first-token (TTFT): use fewer GPUs, maximize memory bandwidth utilization per GPU
+- Keep KV cache large enough for expected context lengths
+- Continuous batching (vLLM, TGI) is essential — naive batching crushes latency under concurrent load
+
+**Throughput-optimized serving** (batch APIs, document processing):
+- Maximize tokens/second across the GPU cluster
+- Larger batches improve GPU utilization at the cost of latency per request
+- Tensor parallelism across multiple GPUs adds communication overhead but increases aggregate throughput
+
+**vLLM** is the most widely deployed open-source inference server and handles both modes well. For 70B+ models, its PagedAttention KV cache management is important for maintaining high GPU utilization without OOM errors.
+
+## Practical Recommendations by Use Case
+
+**Development and prototyping**: Start with 4-bit quantization on the smallest config that fits. A 70B model in 4-bit on 2× RTX 4090 is usable and inexpensive.
+
+**Production with quality requirements**: Use FP16 or BF16. Budget for the right VRAM tier. Quantization artifacts compound with task complexity — coding and reasoning tasks tend to be more sensitive than simple Q&A.
+
+**High-concurrency serving**: Memory bandwidth is your bottleneck at small per-request batch sizes. H100's 3,350 GB/s bandwidth wins over A100's 2,000 GB/s for interactive serving at scale, independent of raw FLOPS.
+
+**Cost-sensitive batch inference**: 4-bit quantization + spot instances on the smallest GPU config that fits is the most cost-effective setup. Checkpoint-resumable batch jobs on spot RTX 4090s can process large datasets at very low cost.
