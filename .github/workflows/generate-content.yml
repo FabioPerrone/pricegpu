@@ -1,0 +1,46 @@
+name: Generate Content
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  generate:
+    name: Generate copy with Qwen3-32B via Groq
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx tsx scripts/generate-copy.ts
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      - run: |
+          git config user.email "bot@pricegpu.com"
+          git config user.name "PriceGPU Bot"
+          git add data/generated/ src/content/
+          if git diff --cached --quiet; then
+            echo "No generated content changes to commit."
+          else
+            git commit -m "chore: regenerate content $(date -u '+%Y-%m-%d')"
+            git push
+          fi
+      - uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'deploy.yml',
+              ref: 'main',
+            });

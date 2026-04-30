@@ -1,0 +1,57 @@
+name: Lighthouse CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lighthouse:
+    name: Lighthouse audit (Performance >= 95)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+      - run: npm install -g @lhci/cli@latest
+      - id: lhci
+        run: |
+          lhci autorun \
+            --collect.staticDistDir=./dist \
+            --collect.numberOfRuns=1 \
+            --assert.preset=lighthouse:recommended \
+            --assert.assertions.categories:performance=["error",{"minScore":0.95}] \
+            --upload.target=temporary-public-storage
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+      - if: always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const outcome = '${{ steps.lhci.outcome }}';
+            const passed = outcome === 'success';
+            const emoji = passed ? '✅' : '❌';
+            const status = passed ? 'passed' : 'FAILED';
+            const body = `## ${emoji} Lighthouse CI – ${status}\n\n` +
+              (passed ? 'All assertions passed.' : 'Performance below 95. See workflow run for details.') +
+              `\n\n[Workflow run](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+      - if: steps.lhci.outcome == 'failure'
+        run: |
+          echo "Lighthouse CI failed: Performance below 95."
+          exit 1
