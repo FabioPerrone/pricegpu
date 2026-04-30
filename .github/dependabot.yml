@@ -1,0 +1,55 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '08:00'
+      timezone: UTC
+    open-pull-requests-limit: 10
+    groups:
+      patch-updates:
+        update-types:
+          - patch
+      minor-updates:
+        update-types:
+          - minor
+    auto-merged-updates:
+      - match:
+          update_type: semver:patch
+      - match:
+          update_type: semver:minor
+    labels:
+      - dependencies
+      - automated
+    commit-message:
+      prefix: chore
+      include: scope
+    ignore:
+      - dependency-name: astro
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@astrojs/*'
+        update-types: ['version-update:semver-major']
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '08:00'
+      timezone: UTC
+    open-pull-requests-limit: 5
+    groups:
+      actions-updates:
+        update-types:
+          - patch
+          - minor
+    labels:
+      - dependencies
+      - github-actions
+      - automated
+    commit-message:
+      prefix: chore
+      include: scope
