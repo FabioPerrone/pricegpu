@@ -1,0 +1,142 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PriceTable from '../../components/PriceTable.astro';
+import CTA from '../../components/CTA.astro';
+import RelatedPages from '../../components/RelatedPages.astro';
+import {
+  getUseCases, getGPUs, getProviders, getPricesForGPU, formatPrice,
+} from '../../lib/pricing.ts';
+import {
+  buildTitle, buildDescription, buildCanonical, buildBreadcrumbs, buildFAQSchema,
+} from '../../lib/seo.ts';
+
+export function getStaticPaths() {
+  return getUseCases().map((uc) => ({ params: { task: uc.slug }, props: { useCase: uc } }));
+}
+
+const { useCase } = Astro.props;
+const allGPUs = getGPUs();
+const providers = getProviders();
+
+const eligibleGPUs = allGPUs.filter((g) => g.vram_gb >= useCase.min_vram_gb);
+const idealGPUs = allGPUs.filter((g) => useCase.ideal_gpus.includes(g.slug));
+
+const cheapestOptions = eligibleGPUs
+  .map((gpu) => {
+    const prices = getPricesForGPU(gpu.slug);
+    if (prices.length === 0) return null;
+    const cheapest = prices.reduce((a, b) => a.price_usd_per_hour < b.price_usd_per_hour ? a : b);
+    const provider = providers.find((p) => p.slug === cheapest.provider_slug);
+    return { gpu, cheapest, provider };
+  })
+  .filter(Boolean)
+  .sort((a, b) => a!.cheapest.price_usd_per_hour - b!.cheapest.price_usd_per_hour)
+  .slice(0, 5);
+
+const flatPrices = eligibleGPUs.flatMap((gpu) =>
+  getPricesForGPU(gpu.slug).map((p) => ({
+    ...p,
+    provider_name: providers.find((pv) => pv.slug === p.provider_slug)?.name,
+  }))
+).sort((a, b) => a.price_usd_per_hour - b.price_usd_per_hour).slice(0, 15);
+
+const cheapestOverall = cheapestOptions[0];
+
+const title = buildTitle([`Cheapest GPU for ${useCase.name}`, 'PriceGPU']);
+const description = buildDescription(
+  `Best GPUs for ${useCase.name}. Requires ${useCase.min_vram_gb}GB+ VRAM. ${cheapestOverall ? `Cheapest option: ${cheapestOverall.gpu.name} at ${formatPrice(cheapestOverall.cheapest.price_usd_per_hour)}/hr on ${cheapestOverall.provider?.name}.` : ''}`
+);
+const canonical = buildCanonical(`/use-case/${useCase.slug}`);
+
+const faqs = [
+  {
+    q: `What GPU do I need for ${useCase.name}?`,
+    a: `${useCase.name} requires at least ${useCase.min_vram_gb}GB VRAM. Recommended: ${useCase.recommended_vram_gb}GB+. Ideal GPUs: ${idealGPUs.map((g) => g.name).join(', ') || eligibleGPUs.slice(0, 3).map((g) => g.name).join(', ')}.`,
+  },
+  {
+    q: `What is the cheapest GPU for ${useCase.name}?`,
+    a: cheapestOverall
+      ? `The cheapest eligible GPU is the ${cheapestOverall.gpu.name} at ${formatPrice(cheapestOverall.cheapest.price_usd_per_hour)}/hr on ${cheapestOverall.provider?.name}.`
+      : 'Check the pricing table for current options.',
+  },
+  {
+    q: `How much does ${useCase.name} cost per hour?`,
+    a: cheapestOverall
+      ? `Entry-level GPU time for ${useCase.name} starts at ${formatPrice(cheapestOverall.cheapest.price_usd_per_hour)}/hr. Runtime is ${useCase.typical_runtime}.`
+      : `Runtime is ${useCase.typical_runtime}. See the pricing table for current rates.`,
+  },
+];
+
+const schemas = [
+  buildBreadcrumbs([
+    { name: 'Home', url: '/' },
+    { name: 'Use Cases', url: '/use-case' },
+    { name: useCase.name, url: canonical },
+  ]),
+  buildFAQSchema(faqs),
+];
+
+const relatedLinks = eligibleGPUs.slice(0, 4).map((g) => ({
+  title: `${g.name} for ${useCase.name}`,
+  url: `/cheapest/${g.slug}-for-${useCase.slug}`,
+  description: `${g.vram_gb}GB VRAM`,
+}));
+---
+
+<Layout {title} {description} {canonical} {schemas}>
+  <nav class="breadcrumb">
+    <a href="/">Home</a><span>/</span><a href="/use-case">Use Cases</a><span>/</span><span>{useCase.name}</span>
+  </nav>
+
+  <h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem;">
+    Best Cloud GPU for {useCase.name}
+  </h1>
+  <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+    Minimum {useCase.min_vram_gb}GB VRAM required · Recommended {useCase.recommended_vram_gb}GB+ · Runtime: {useCase.typical_runtime}
+  </p>
+
+  {cheapestOverall?.provider && (
+    <div style="margin-bottom: 1.5rem;">
+      <CTA
+        providerSlug={cheapestOverall.provider.slug}
+        providerName={cheapestOverall.provider.name}
+        headline={`Cheapest for ${useCase.name}: ${cheapestOverall.gpu.name} on ${cheapestOverall.provider.name}`}
+        note={`${formatPrice(cheapestOverall.cheapest.price_usd_per_hour)}/hr · ${cheapestOverall.cheapest.availability} · verify on provider site`}
+      />
+    </div>
+  )}
+
+  <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">
+    Cheapest GPU Options — {eligibleGPUs.length} eligible GPUs
+  </h2>
+  <PriceTable prices={flatPrices} />
+
+  <section style="margin-top: 2.5rem;">
+    <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">GPU Requirements</h2>
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <table>
+        <tbody>
+          <tr><td style="color:var(--text-muted);">Minimum VRAM</td><td>{useCase.min_vram_gb} GB</td></tr>
+          <tr><td style="color:var(--text-muted);">Recommended VRAM</td><td>{useCase.recommended_vram_gb} GB</td></tr>
+          <tr><td style="color:var(--text-muted);">Ideal GPUs</td><td>{idealGPUs.map((g) => g.name).join(', ') || '—'}</td></tr>
+          <tr><td style="color:var(--text-muted);">Typical Runtime</td><td>{useCase.typical_runtime}</td></tr>
+          <tr><td style="color:var(--text-muted);">Billing Pattern</td><td>{useCase.billing_pattern}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section style="margin-top: 2.5rem;">
+    <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">FAQ</h2>
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+      {faqs.map((faq) => (
+        <div class="card">
+          <div style="font-weight: 600; margin-bottom: 0.4rem;">{faq.q}</div>
+          <div style="color: var(--text-muted); font-size: 0.9rem;">{faq.a}</div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <RelatedPages links={relatedLinks} heading="GPU-Specific Pages" />
+</Layout>

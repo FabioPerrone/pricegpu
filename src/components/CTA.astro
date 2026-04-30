@@ -1,0 +1,34 @@
+---
+import { buildAffiliateUrl } from '../lib/affiliate.ts';
+
+interface Props {
+  providerSlug: string;
+  providerName: string;
+  headline?: string;
+  note?: string;
+  variant?: 'banner' | 'inline';
+}
+
+const { providerSlug, providerName, headline, note, variant = 'banner' } = Astro.props;
+const url = buildAffiliateUrl(providerSlug);
+---
+
+{variant === 'banner' ? (
+  <div class="verdict-box" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <div style="font-weight: 600; margin-bottom: 0.2rem;">
+        {headline || `Start on ${providerName}`}
+      </div>
+      {note && <div style="font-size: 0.85rem; color: var(--text-muted);">{note}</div>}
+    </div>
+    <a href={url} rel="sponsored noopener" target="_blank" class="btn-primary">
+      Try {providerName} →
+    </a>
+  </div>
+) : (
+  <span>
+    <a href={url} rel="sponsored noopener" target="_blank" class="btn-primary" style="font-size: 0.85rem; padding: 0.4rem 0.9rem;">
+      Try {providerName} →
+    </a>
+  </span>
+)}

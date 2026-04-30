@@ -1,0 +1,71 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { buildTitle, buildDescription, buildCanonical, buildBreadcrumbs } from '../lib/seo.ts';
+import { getProviders, getProviderPrices } from '../lib/pricing.ts';
+
+const providers = getProviders();
+
+const statuses = providers.map((p) => {
+  const data = getProviderPrices(p.slug);
+  const scrapedAt = data?.scraped_at ?? null;
+  const itemCount = data?.items.length ?? 0;
+  const version = data?.scraper_version ?? '—';
+  const ageMs = scrapedAt ? Date.now() - new Date(scrapedAt).getTime() : Infinity;
+  const ageDays = ageMs === Infinity ? null : Math.floor(ageMs / 86400000);
+  const isStale = ageDays === null || ageDays > 8;
+  return { provider: p, scrapedAt, itemCount, version, ageDays, isStale };
+});
+
+const freshCount = statuses.filter((s) => !s.isStale).length;
+
+const title = buildTitle(['Data Status', 'PriceGPU']);
+const description = buildDescription('PriceGPU scraper status: last data refresh per provider, item counts, and scraper versions.');
+const canonical = buildCanonical('/status');
+const schemas = [buildBreadcrumbs([{ name: 'Home', url: '/' }, { name: 'Status', url: '/status' }])];
+
+const buildTime = new Date().toISOString();
+---
+
+<Layout {title} {description} {canonical} {schemas} noindex={true}>
+  <nav class="breadcrumb">
+    <a href="/">Home</a><span>/</span><span>Status</span>
+  </nav>
+
+  <h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem;">Data Status</h1>
+  <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+    Site built: {buildTime} · {freshCount}/{providers.length} providers fresh (≤8 days)
+  </p>
+
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <table>
+      <thead>
+        <tr>
+          <th>Provider</th>
+          <th>Last Scraped</th>
+          <th>Age</th>
+          <th>Items</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {statuses.map(({ provider, scrapedAt, itemCount, ageDays, isStale }) => (
+          <tr>
+            <td><a href={`/provider/${provider.slug}`}>{provider.name}</a></td>
+            <td style="color: var(--text-muted); font-size: 0.85rem;">
+              {scrapedAt
+                ? new Date(scrapedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                : '—'}
+            </td>
+            <td style="color: var(--text-muted);">{ageDays !== null ? `${ageDays}d` : '—'}</td>
+            <td>{itemCount}</td>
+            <td>
+              <span class={`badge ${isStale ? 'badge-yellow' : 'badge-green'}`}>
+                {isStale ? 'stale' : 'fresh'}
+              </span>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</Layout>

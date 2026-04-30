@@ -1,0 +1,31 @@
+---
+interface RelatedLink {
+  title: string;
+  url: string;
+  description?: string;
+}
+
+interface Props {
+  links: RelatedLink[];
+  heading?: string;
+}
+
+const { links, heading = 'Related pages' } = Astro.props;
+const visible = links.slice(0, 6);
+---
+
+{visible.length > 0 && (
+  <section style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+    <h2 style="font-size: 1rem; color: var(--text-muted); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.06em;">{heading}</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.75rem;">
+      {visible.map(link => (
+        <a href={link.url} class="card" style="display: block; text-decoration: none; transition: border-color 0.15s;">
+          <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 0.25rem;">{link.title}</div>
+          {link.description && (
+            <div style="font-size: 0.8rem; color: var(--text-muted);">{link.description}</div>
+          )}
+        </a>
+      ))}
+    </div>
+  </section>
+)}

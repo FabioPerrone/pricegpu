@@ -1,0 +1,154 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PriceTable from '../../components/PriceTable.astro';
+import CTA from '../../components/CTA.astro';
+import RelatedPages from '../../components/RelatedPages.astro';
+import {
+  getGPUs, getProviders, getPricesForGPU, formatPrice,
+  getCheapestForGPU, getRelatedGPUs, getLastScrapeDate,
+} from '../../lib/pricing.ts';
+import {
+  buildTitle, buildDescription, buildCanonical, buildBreadcrumbs,
+  buildProductSchema, buildFAQSchema,
+} from '../../lib/seo.ts';
+
+export function getStaticPaths() {
+  return getGPUs().map((gpu) => ({ params: { model: gpu.slug }, props: { gpu } }));
+}
+
+const { gpu } = Astro.props;
+const providers = getProviders();
+const prices = getPricesForGPU(gpu.slug).map((p) => {
+  const provider = providers.find((pv) => pv.slug === p.provider_slug);
+  return { ...p, provider_name: provider?.name };
+});
+const cheapest = getCheapestForGPU(gpu.slug);
+const cheapestProvider = cheapest ? providers.find((p) => p.slug === cheapest.provider_slug) : null;
+const relatedGPUs = getRelatedGPUs(gpu, 6);
+const scrapedAt = getLastScrapeDate(cheapest?.provider_slug ?? '');
+
+const title = buildTitle([`${gpu.name} Cloud GPU Price`, 'PriceGPU']);
+const description = buildDescription(
+  `Compare ${gpu.name} rental prices across ${prices.length} providers. Cheapest from ${cheapest ? formatPrice(cheapest.price_usd_per_hour) : 'N/A'}/hr. ${gpu.vram_gb}GB VRAM, ${gpu.fp16_tflops} TFLOPS FP16.`
+);
+const canonical = buildCanonical(`/gpu/${gpu.slug}`);
+
+const faqs = [
+  {
+    q: `What is the cheapest ${gpu.name} cloud provider?`,
+    a: cheapest && cheapestProvider
+      ? `As of the last data refresh, ${cheapestProvider.name} offers the ${gpu.name} at ${formatPrice(cheapest.price_usd_per_hour)} (${cheapest.availability}, ${cheapest.region}).`
+      : `No pricing data is currently available for the ${gpu.name}.`,
+  },
+  {
+    q: `How much VRAM does the ${gpu.name} have?`,
+    a: `The ${gpu.name} has ${gpu.vram_gb}GB of VRAM${gpu.memory_bandwidth_gbps ? ` and ${gpu.memory_bandwidth_gbps} GB/s memory bandwidth` : ''}.`,
+  },
+  {
+    q: `What workloads is the ${gpu.name} good for?`,
+    a: `The ${gpu.name} is well-suited for: ${gpu.good_for.join(', ')}.`,
+  },
+  {
+    q: `What is the FP16 performance of the ${gpu.name}?`,
+    a: `The ${gpu.name} delivers ${gpu.fp16_tflops} TFLOPS of FP16 performance${gpu.fp8_tflops ? `, and ${gpu.fp8_tflops} TFLOPS FP8` : ''}.`,
+  },
+  {
+    q: `What architecture is the ${gpu.name}?`,
+    a: `The ${gpu.name} is based on the ${gpu.architecture} architecture, released in ${gpu.released}.`,
+  },
+];
+
+const schemas = [
+  buildBreadcrumbs([
+    { name: 'Home', url: '/' },
+    { name: 'GPUs', url: '/gpu' },
+    { name: gpu.name, url: `/gpu/${gpu.slug}` },
+  ]),
+  buildProductSchema(gpu, prices),
+  buildFAQSchema(faqs),
+];
+
+const relatedLinks = [
+  ...relatedGPUs.map((g) => ({
+    title: g.name,
+    url: `/gpu/${g.slug}`,
+    description: `${g.vram_gb}GB VRAM · ${g.architecture}`,
+  })),
+  ...providers.slice(0, 3).map((p) => ({
+    title: `${gpu.name} on ${p.name}`,
+    url: `/provider/${p.slug}`,
+    description: p.description,
+  })),
+];
+---
+
+<Layout {title} {description} {canonical} {schemas}>
+  <nav class="breadcrumb">
+    <a href="/">Home</a><span>/</span><a href="/gpu">GPUs</a><span>/</span><span>{gpu.name}</span>
+  </nav>
+
+  <div style="display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+    <h1 style="font-size: 1.75rem; font-weight: 700;">{gpu.name} Cloud GPU Pricing</h1>
+    {cheapest && (
+      <span style="font-size: 1.1rem; color: var(--text-muted);">
+        from <strong class="accent">{formatPrice(cheapest.price_usd_per_hour)}</strong>/hr
+      </span>
+    )}
+  </div>
+  <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+    {gpu.vram_gb}GB VRAM · {gpu.fp16_tflops} TFLOPS FP16 · {gpu.architecture} · Released {gpu.released}
+  </p>
+
+  {cheapestProvider && (
+    <div style="margin-bottom: 1.5rem;">
+      <CTA
+        providerSlug={cheapestProvider.slug}
+        providerName={cheapestProvider.name}
+        headline={`Cheapest ${gpu.name}: ${cheapestProvider.name} at ${formatPrice(cheapest!.price_usd_per_hour)}/hr`}
+        note={`${cheapest!.availability} · ${cheapest!.region} · verify on provider site`}
+      />
+    </div>
+  )}
+
+  <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">Live Pricing — {prices.length} offers</h2>
+  <PriceTable {prices} gpuName={gpu.name} {scrapedAt} />
+
+  <section style="margin-top: 2.5rem;">
+    <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">Specifications</h2>
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <table>
+        <tbody>
+          <tr><td style="color:var(--text-muted);">VRAM</td><td>{gpu.vram_gb} GB</td></tr>
+          {gpu.memory_bandwidth_gbps && <tr><td style="color:var(--text-muted);">Memory Bandwidth</td><td>{gpu.memory_bandwidth_gbps} GB/s</td></tr>}
+          <tr><td style="color:var(--text-muted);">FP16 TFLOPS</td><td>{gpu.fp16_tflops}</td></tr>
+          {gpu.fp8_tflops && <tr><td style="color:var(--text-muted);">FP8 TFLOPS</td><td>{gpu.fp8_tflops}</td></tr>}
+          <tr><td style="color:var(--text-muted);">Architecture</td><td>{gpu.architecture}</td></tr>
+          <tr><td style="color:var(--text-muted);">Released</td><td>{gpu.released}</td></tr>
+          {gpu.tdp_watts && <tr><td style="color:var(--text-muted);">TDP</td><td>{gpu.tdp_watts}W</td></tr>}
+          {gpu.msrp_usd && <tr><td style="color:var(--text-muted);">MSRP</td><td>${gpu.msrp_usd.toLocaleString()}</td></tr>}
+          <tr><td style="color:var(--text-muted);">Good For</td><td>{gpu.good_for.join(', ')}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section style="margin-top: 2.5rem;">
+    <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">FAQ</h2>
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+      {faqs.map((faq) => (
+        <div class="card">
+          <div style="font-weight: 600; margin-bottom: 0.4rem;">{faq.q}</div>
+          <div style="color: var(--text-muted); font-size: 0.9rem;">{faq.a}</div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  {scrapedAt && (
+    <p style="margin-top: 1.5rem; font-size: 0.8rem; color: var(--text-dim);">
+      Last data refresh: {new Date(scrapedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}. Prices are indicative — verify on the provider's site before purchasing.
+    </p>
+  )}
+
+  <RelatedPages links={relatedLinks} heading="Related GPUs & Providers" />
+</Layout>

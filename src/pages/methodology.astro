@@ -1,0 +1,51 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { buildTitle, buildDescription, buildCanonical, buildBreadcrumbs } from '../lib/seo.ts';
+import { getProviders } from '../lib/pricing.ts';
+
+const providers = getProviders();
+const title = buildTitle(['Methodology', 'PriceGPU']);
+const description = buildDescription('How PriceGPU collects, validates, and publishes cloud GPU pricing data. Scraping methodology, data freshness, and accuracy notes.');
+const canonical = buildCanonical('/methodology');
+const schemas = [buildBreadcrumbs([{ name: 'Home', url: '/' }, { name: 'Methodology', url: '/methodology' }])];
+---
+
+<Layout {title} {description} {canonical} {schemas}>
+  <nav class="breadcrumb">
+    <a href="/">Home</a><span>/</span><span>Methodology</span>
+  </nav>
+
+  <h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 1.5rem;">Methodology</h1>
+
+  <div class="prose">
+    <h2>Data collection</h2>
+    <p>
+      Pricing is scraped weekly (Monday 03:00 UTC) using Playwright (headless Chromium). Each scraper navigates
+      to the provider's public pricing page, waits for dynamic content to render, extracts GPU model names and
+      per-hour prices, maps GPU names to canonical slugs, and validates output against a Zod schema before saving.
+    </p>
+
+    <h2>Data accuracy</h2>
+    <p>
+      Prices reflect the provider's publicly listed on-demand rates at the time of the last scrape.
+      Actual billing may differ due to promotions, spot pricing, minimum billing periods, or egress fees.
+      Every price table shows "as of [date], verify on provider site".
+    </p>
+
+    <h2>GPU specifications</h2>
+    <p>
+      GPU specs (VRAM, TFLOPS, architecture, release year) come from official NVIDIA and AMD product pages,
+      not from cloud provider marketing copy.
+    </p>
+
+    <h2>Open data</h2>
+    <p>
+      The raw price dataset is published at <a href="/api/prices.json">/api/prices.json</a> under CC-BY-4.0.
+      The scraper source code is in the
+      <a href="https://github.com/fabioperrone/pricegpu" rel="noopener">public GitHub repository</a>.
+    </p>
+
+    <h2>Providers tracked</h2>
+    <p>{providers.map((p) => p.name).join(' · ')}</p>
+  </div>
+</Layout>

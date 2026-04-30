@@ -1,0 +1,56 @@
+---
+import { getProviders } from '../../lib/pricing.ts';
+
+const ENV_REFS: Record<string, string> = {
+  RUNPOD_REF:     import.meta.env.RUNPOD_REF     ?? '',
+  VAST_REF:       import.meta.env.VAST_REF       ?? '',
+  LAMBDA_REF:     import.meta.env.LAMBDA_REF     ?? '',
+  PAPERSPACE_REF: import.meta.env.PAPERSPACE_REF ?? '',
+  MODAL_REF:      import.meta.env.MODAL_REF      ?? '',
+  COREWEAVE_REF:  import.meta.env.COREWEAVE_REF  ?? '',
+  TOGETHER_REF:   import.meta.env.TOGETHER_REF   ?? '',
+  REPLICATE_REF:  import.meta.env.REPLICATE_REF  ?? '',
+  SALAD_REF:      import.meta.env.SALAD_REF      ?? '',
+  TENSORDOCK_REF: import.meta.env.TENSORDOCK_REF ?? '',
+  HYPERSTACK_REF: import.meta.env.HYPERSTACK_REF ?? '',
+  DATACRUNCH_REF: import.meta.env.DATACRUNCH_REF ?? '',
+  FLUIDSTACK_REF: import.meta.env.FLUIDSTACK_REF ?? '',
+  GENESIS_REF:    import.meta.env.GENESIS_REF    ?? '',
+  FAL_REF:        import.meta.env.FAL_REF        ?? '',
+};
+
+export function getStaticPaths() {
+  const providers = getProviders();
+  return providers.map((p) => ({
+    params: { partner: p.slug },
+    props: { provider: p },
+  }));
+}
+
+const { provider } = Astro.props;
+const refCode = ENV_REFS[provider.affiliate_param_env] ?? '';
+const destinationUrl = refCode
+  ? provider.affiliate_url_template.replace('{REF}', refCode)
+  : provider.url;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Redirecting to {provider.name}...</title>
+    <meta http-equiv="refresh" content={`0; url=${destinationUrl}`} />
+    <link rel="canonical" href={`https://pricegpu.com/go/${provider.slug}`} />
+    <meta name="robots" content="noindex, follow" />
+    <script define:vars={{ destinationUrl }}>
+      window.location.replace(destinationUrl);
+    </script>
+  </head>
+  <body style="background:#0d0d0d;color:#e8e8e8;font-family:monospace;padding:2rem;">
+    <p>Redirecting to <a href={destinationUrl}>{provider.name}</a>...</p>
+    <p style="font-size:0.8rem;color:#888;">
+      Some links on PriceGPU are affiliate links — we may earn a commission at no cost to you.
+      <a href="/disclosure" style="color:#888;">Disclosure</a>
+    </p>
+  </body>
+</html>

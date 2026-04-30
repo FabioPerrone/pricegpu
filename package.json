@@ -1,0 +1,34 @@
+{
+  "name": "pricegpu",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "scrape": "tsx scripts/scrape/runpod.ts && tsx scripts/scrape/vast.ts && tsx scripts/scrape/lambda.ts && tsx scripts/scrape/paperspace.ts && tsx scripts/scrape/modal.ts && tsx scripts/scrape/coreweave.ts && tsx scripts/scrape/tensordock.ts && tsx scripts/scrape/genesis.ts && tsx scripts/scrape/hyperstack.ts && tsx scripts/scrape/together.ts && tsx scripts/scrape/replicate.ts && tsx scripts/scrape/fal.ts && tsx scripts/scrape/salad.ts && tsx scripts/scrape/fluidstack.ts && tsx scripts/scrape/datacrunch.ts",
+    "generate-copy": "tsx scripts/generate-copy.ts",
+    "ping-indexnow": "tsx scripts/ping-indexnow.ts",
+    "syndicate": "tsx scripts/syndicate.ts",
+    "audit": "tsx scripts/audit-indexation.ts"
+  },
+  "dependencies": {
+    "@astrojs/mdx": "^5.0.4",
+    "@pagefind/default-ui": "^1.5.2",
+    "@tailwindcss/vite": "^4.2.4",
+    "astro": "^6.1.10",
+    "openai": "^6.35.0",
+    "pagefind": "^1.5.2",
+    "tailwindcss": "^4.2.4",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "playwright": "^1.59.1",
+    "tsx": "^4.21.0"
+  }
+}

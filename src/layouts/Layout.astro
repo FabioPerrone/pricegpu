@@ -1,0 +1,92 @@
+---
+import '../styles/global.css';
+import { AFFILIATE_DISCLAIMER } from '../lib/affiliate.ts';
+
+interface Props {
+  title: string;
+  description: string;
+  canonical: string;
+  schemas?: object[];
+  noindex?: boolean;
+}
+
+const { title, description, canonical, schemas = [], noindex = false } = Astro.props;
+const ownerName = import.meta.env.OWNER_NAME || 'the editorial team';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+
+    {noindex && <meta name="robots" content="noindex, follow" />}
+
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="PriceGPU" />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="sitemap" href="/sitemap.xml" />
+    <link rel="alternate" type="application/rss+xml" title="PriceGPU" href="/api/feed.xml" />
+
+    {schemas.map((schema) => (
+      <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+    ))}
+  </head>
+
+  <body>
+    <header style="border-bottom: 1px solid var(--border); padding: 0.75rem 0;">
+      <div style="max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+        <a href="/" class="wordmark" style="text-decoration: none;">
+          <span class="chevron">›</span>pricegpu
+        </a>
+        <nav style="display: flex; gap: 1.5rem; font-size: 0.85rem; color: var(--text-muted);">
+          <a href="/gpu/h100-80gb-sxm" style="color: var(--text-muted);">GPUs</a>
+          <a href="/provider/runpod" style="color: var(--text-muted);">Providers</a>
+          <a href="/compare/runpod-vs-vast" style="color: var(--text-muted);">Compare</a>
+          <a href="/blog" style="color: var(--text-muted);">Blog</a>
+          <a href="/api/prices.json" style="color: var(--text-muted);">API</a>
+        </nav>
+      </div>
+    </header>
+
+    <main style="max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem;">
+      <slot />
+    </main>
+
+    <footer style="border-top: 1px solid var(--border); margin-top: 4rem; padding: 2rem 0; font-size: 0.8rem; color: var(--text-muted);">
+      <div style="max-width: 1100px; margin: 0 auto; padding: 0 1.5rem;">
+        <div style="display: flex; flex-wrap: wrap; gap: 2rem; justify-content: space-between; margin-bottom: 1rem;">
+          <div>
+            <div class="wordmark" style="font-size: 1rem; margin-bottom: 0.4rem;">
+              <span class="chevron">›</span>pricegpu
+            </div>
+            <div>Live cloud GPU pricing across every major provider.</div>
+          </div>
+          <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: flex-start;">
+            <a href="/about" style="color: var(--text-muted);">About</a>
+            <a href="/methodology" style="color: var(--text-muted);">Methodology</a>
+            <a href="/disclosure" style="color: var(--text-muted);">Disclosure</a>
+            <a href="/status" style="color: var(--text-muted);">Status</a>
+            <a href="/api/prices.json" style="color: var(--text-muted);">Public API</a>
+          </div>
+        </div>
+        <div style="color: var(--text-dim);">
+          {AFFILIATE_DISCLAIMER} &nbsp;·&nbsp;
+          Data compiled by automated scrapers. Editorial review by {ownerName}.
+          &nbsp;·&nbsp;
+          <a href="/methodology" style="color: var(--text-dim);">Methodology</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

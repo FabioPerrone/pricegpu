@@ -1,0 +1,60 @@
+{
+  "scraped_at": "2026-04-29T03:00:00Z",
+  "scraper_version": "1.0.0",
+  "items": [
+    {
+      "gpu_slug": "h100-80gb-sxm",
+      "configuration": "Nvidia H100 (80GB)",
+      "price_usd_per_hour": 4.85,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://replicate.com/pricing"
+    },
+    {
+      "gpu_slug": "a100-80gb-sxm",
+      "configuration": "Nvidia A100 (80GB, SXM)",
+      "price_usd_per_hour": 3.24,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://replicate.com/pricing"
+    },
+    {
+      "gpu_slug": "a100-40gb-pcie",
+      "configuration": "Nvidia A100 (40GB)",
+      "price_usd_per_hour": 2.30,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://replicate.com/pricing"
+    },
+    {
+      "gpu_slug": "rtx-4090",
+      "configuration": "Nvidia RTX 4090 (24GB)",
+      "price_usd_per_hour": 1.00,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://replicate.com/pricing"
+    },
+    {
+      "gpu_slug": "l40s",
+      "configuration": "Nvidia L40S (48GB)",
+      "price_usd_per_hour": 1.95,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://replicate.com/pricing"
+    },
+    {
+      "gpu_slug": "t4",
+      "configuration": "Nvidia T4 (16GB)",
+      "price_usd_per_hour": 0.44,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://replicate.com/pricing"
+    }
+  ]
+}
