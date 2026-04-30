@@ -1,0 +1,46 @@
+---
+import { buildTitle, buildCanonical } from '../../lib/seo.ts';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const title = buildTitle(['Revenue Dashboard', 'PriceGPU']);
+const canonical = buildCanonical('/admin/revenue');
+
+let revenueData: Record<string, unknown> = {};
+try {
+  const raw = fs.readFileSync(
+    path.resolve(process.cwd(), 'data/revenue.json'),
+    'utf-8'
+  );
+  revenueData = JSON.parse(raw);
+} catch {
+  revenueData = { note: 'Revenue data not yet available.' };
+}
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="canonical" href={canonical} />
+    <style>
+      body { background: #0d0d0d; color: #e8e8e8; font-family: monospace; padding: 2rem; max-width: 800px; margin: 0 auto; }
+      h1 { font-size: 1.5rem; margin-bottom: 1rem; }
+      pre { background: #161616; border: 1px solid #2a2a2a; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.85rem; }
+      a { color: #00D26A; }
+    </style>
+  </head>
+  <body>
+    <a href="/">← Back to site</a>
+    <h1>Revenue Dashboard</h1>
+    <p style="color: #888; font-size: 0.85rem;">
+      This page is gated by Cloudflare Access — only the site owner's email can view it.
+      Configure in Cloudflare Zero Trust → Access → Applications.
+    </p>
+    <h2 style="font-size: 1rem; margin-top: 1.5rem;">Revenue Data</h2>
+    <pre>{JSON.stringify(revenueData, null, 2)}</pre>
+  </body>
+</html>

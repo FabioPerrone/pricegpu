@@ -1,0 +1,194 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PriceTable from '../../components/PriceTable.astro';
+import CTA from '../../components/CTA.astro';
+import RelatedPages from '../../components/RelatedPages.astro';
+
+import {
+  getGPUs, getProviders, getPricesForGPU, formatPrice, getCheapestForGPU,
+} from '../../lib/pricing.ts';
+import {
+  buildTitle, buildDescription, buildCanonical, buildBreadcrumbs, buildFAQSchema,
+} from '../../lib/seo.ts';
+
+export function getStaticPaths() {
+  const gpus = getGPUs();
+  const CURATED_PAIRS = [
+    ['h100-80gb-sxm', 'a100-80gb-sxm'],
+    ['h100-80gb-sxm', 'h100-pcie-80gb'],
+    ['h100-80gb-sxm', 'h200-sxm'],
+    ['a100-80gb-sxm', 'a100-40gb-sxm'],
+    ['a100-80gb-sxm', 'l40s'],
+    ['l40s', 'a6000'],
+    ['l40s', 'rtx-4090'],
+    ['rtx-4090', 'rtx-4080'],
+    ['rtx-4090', 'a10'],
+    ['rtx-4090', 'rtx-3090'],
+    ['a10', 'a10g'],
+    ['a10', 'l4'],
+    ['l4', 't4'],
+    ['v100-16gb-sxm2', 'a100-40gb-sxm'],
+    ['mi300x', 'h100-80gb-sxm'],
+    ['rtx-5090', 'rtx-4090'],
+    ['b100', 'h100-80gb-sxm'],
+    ['b200', 'h100-80gb-sxm'],
+    ['a40', 'a6000'],
+    ['a40', 'l40'],
+  ];
+
+  return CURATED_PAIRS.flatMap(([slugA, slugB]) => {
+    const gpuA = gpus.find((g) => g.slug === slugA);
+    const gpuB = gpus.find((g) => g.slug === slugB);
+    if (!gpuA || !gpuB) return [];
+    return [
+      { params: { a: slugA, b: slugB }, props: { gpuA, gpuB } },
+      { params: { a: slugB, b: slugA }, props: { gpuA: gpuB, gpuB: gpuA } },
+    ];
+  });
+}
+
+const { gpuA, gpuB } = Astro.props;
+const providers = getProviders();
+
+const pricesA = getPricesForGPU(gpuA.slug)
+  .map((p) => ({ ...p, provider_name: providers.find((pv) => pv.slug === p.provider_slug)?.name }))
+  .sort((a, b) => a.price_usd_per_hour - b.price_usd_per_hour)
+  .slice(0, 8);
+
+const pricesB = getPricesForGPU(gpuB.slug)
+  .map((p) => ({ ...p, provider_name: providers.find((pv) => pv.slug === p.provider_slug)?.name }))
+  .sort((a, b) => a.price_usd_per_hour - b.price_usd_per_hour)
+  .slice(0, 8);
+
+const cheapestA = getCheapestForGPU(gpuA.slug);
+const cheapestB = getCheapestForGPU(gpuB.slug);
+const cheaperGPU = cheapestA && cheapestB
+  ? cheapestA.price_usd_per_hour <= cheapestB.price_usd_per_hour ? gpuA : gpuB
+  : null;
+const betterPerf = gpuA.fp16_tflops >= gpuB.fp16_tflops ? gpuA : gpuB;
+
+const specRows = [
+  { label: 'VRAM', a: `${gpuA.vram_gb} GB`, b: `${gpuB.vram_gb} GB` },
+  { label: 'FP16 TFLOPS', a: gpuA.fp16_tflops.toString(), b: gpuB.fp16_tflops.toString() },
+  ...(gpuA.fp8_tflops || gpuB.fp8_tflops
+    ? [{ label: 'FP8 TFLOPS', a: gpuA.fp8_tflops?.toString() ?? '—', b: gpuB.fp8_tflops?.toString() ?? '—' }]
+    : []),
+  { label: 'Memory BW', a: gpuA.memory_bandwidth_gbps ? `${gpuA.memory_bandwidth_gbps} GB/s` : '—', b: gpuB.memory_bandwidth_gbps ? `${gpuB.memory_bandwidth_gbps} GB/s` : '—' },
+  { label: 'Architecture', a: gpuA.architecture, b: gpuB.architecture },
+  { label: 'Released', a: gpuA.released.toString(), b: gpuB.released.toString() },
+  { label: 'MSRP', a: `$${gpuA.msrp_usd.toLocaleString()}`, b: `$${gpuB.msrp_usd.toLocaleString()}` },
+  { label: 'Cheapest Cloud', a: cheapestA ? formatPrice(cheapestA.price_usd_per_hour) : '—', b: cheapestB ? formatPrice(cheapestB.price_usd_per_hour) : '—' },
+];
+
+const title = buildTitle([`${gpuA.name} vs ${gpuB.name}`, 'GPU Comparison', 'PriceGPU']);
+const description = buildDescription(
+  `${gpuA.name} vs ${gpuB.name}: specs, cloud pricing, and performance. ${betterPerf.name} leads on FP16 (${betterPerf.fp16_tflops} TFLOPS); ${cheaperGPU?.name ?? 'varies'} is cheaper to rent.`
+);
+const canonical = buildCanonical(`/gpu-compare/${gpuA.slug}-vs-${gpuB.slug}`);
+
+const faqs = [
+  {
+    q: `Is the ${gpuA.name} faster than the ${gpuB.name}?`,
+    a: `The ${betterPerf.name} has higher FP16 throughput: ${betterPerf.fp16_tflops} vs ${(betterPerf.slug === gpuA.slug ? gpuB : gpuA).fp16_tflops} TFLOPS.`,
+  },
+  {
+    q: `Which is cheaper to rent, ${gpuA.name} or ${gpuB.name}?`,
+    a: cheapestA && cheapestB
+      ? `${cheaperGPU?.name} rents cheaper. ${gpuA.name}: from ${formatPrice(cheapestA.price_usd_per_hour)}/hr; ${gpuB.name}: from ${formatPrice(cheapestB.price_usd_per_hour)}/hr.`
+      : 'See the pricing tables below.',
+  },
+  {
+    q: `Which GPU has more VRAM?`,
+    a: `${gpuA.vram_gb > gpuB.vram_gb ? gpuA.name : gpuB.name} has more VRAM: ${Math.max(gpuA.vram_gb, gpuB.vram_gb)}GB vs ${Math.min(gpuA.vram_gb, gpuB.vram_gb)}GB.`,
+  },
+];
+
+const allGPUs = getGPUs();
+const relatedLinks = allGPUs
+  .filter((g) => g.slug !== gpuA.slug && g.slug !== gpuB.slug)
+  .slice(0, 6)
+  .map((g) => ({
+    title: `${gpuA.name} vs ${g.name}`,
+    url: `/gpu-compare/${gpuA.slug}-vs-${g.slug}`,
+    description: `${g.vram_gb}GB VRAM · ${g.architecture}`,
+  }));
+
+const schemas = [
+  buildBreadcrumbs([
+    { name: 'Home', url: '/' },
+    { name: 'GPU Compare', url: '/gpu-compare' },
+    { name: `${gpuA.name} vs ${gpuB.name}`, url: canonical },
+  ]),
+  buildFAQSchema(faqs),
+];
+
+const cheapestAProvider = cheapestA ? providers.find((p) => p.slug === cheapestA.provider_slug) : null;
+---
+
+<Layout {title} {description} {canonical} {schemas}>
+  <nav class="breadcrumb">
+    <a href="/">Home</a><span>/</span><a href="/gpu-compare">GPU Compare</a><span>/</span>
+    <span>{gpuA.name} vs {gpuB.name}</span>
+  </nav>
+
+  <h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem;">
+    {gpuA.name} vs {gpuB.name}
+  </h1>
+  <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+    {betterPerf.name} wins on performance ({betterPerf.fp16_tflops} TFLOPS).
+    {cheaperGPU && <>{cheaperGPU.name} is cheaper to rent.</>}
+  </p>
+
+  {cheapestAProvider && cheapestA && (
+    <div style="margin-bottom: 1.5rem;">
+      <CTA
+        providerSlug={cheapestAProvider.slug}
+        providerName={cheapestAProvider.name}
+        headline={`Rent ${gpuA.name} from ${formatPrice(cheapestA.price_usd_per_hour)}/hr`}
+        note={`${cheapestA.availability} · ${cheapestA.region}`}
+      />
+    </div>
+  )}
+
+  <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">Specifications</h2>
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 30%;">Spec</th>
+          <th>{gpuA.name}</th>
+          <th>{gpuB.name}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {specRows.map((row) => (
+          <tr>
+            <td style="color: var(--text-muted);">{row.label}</td>
+            <td>{row.a}</td>
+            <td>{row.b}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <h2 style="font-size: 1.1rem; margin: 2rem 0 1rem;">{gpuA.name} Cloud Prices</h2>
+  <PriceTable prices={pricesA} gpuName={gpuA.name} />
+
+  <h2 style="font-size: 1.1rem; margin: 2rem 0 1rem;">{gpuB.name} Cloud Prices</h2>
+  <PriceTable prices={pricesB} gpuName={gpuB.name} />
+
+  <section style="margin-top: 2.5rem;">
+    <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">FAQ</h2>
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+      {faqs.map((faq) => (
+        <div class="card">
+          <div style="font-weight: 600; margin-bottom: 0.4rem;">{faq.q}</div>
+          <div style="color: var(--text-muted); font-size: 0.9rem;">{faq.a}</div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <RelatedPages links={relatedLinks} heading="More GPU Comparisons" />
+</Layout>
