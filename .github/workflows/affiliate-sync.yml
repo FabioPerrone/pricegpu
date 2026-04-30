@@ -1,0 +1,101 @@
+name: Affiliate Link Health Check
+
+on:
+  schedule:
+    - cron: '0 10 * * *'
+  workflow_dispatch:
+
+jobs:
+  check:
+    name: HEAD-check all /go/* destinations
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - id: linkcheck
+        run: |
+          node --input-type=module <<'EOF'
+          import { readFileSync, existsSync, writeFileSync } from 'fs';
+          const PROVIDERS_FILE = './data/providers.json';
+          let providers = [];
+          if (existsSync(PROVIDERS_FILE)) {
+            providers = JSON.parse(readFileSync(PROVIDERS_FILE, 'utf8'));
+          } else {
+            console.log('providers.json not found');
+            process.exit(0);
+          }
+          const destinations = providers.map(p => p.affiliateUrl || p.url).filter(Boolean);
+          if (destinations.length === 0) {
+            console.log('No affiliate destinations found');
+            process.exit(0);
+          }
+          const broken = [];
+          for (const url of destinations) {
+            try {
+              const res = await fetch(url, {
+                method: 'HEAD',
+                redirect: 'follow',
+                signal: AbortSignal.timeout(15_000),
+                headers: { 'User-Agent': 'pricegpu-link-checker/1.0' },
+              });
+              const ok = res.status >= 200 && res.status < 400;
+              console.log(`${ok ? 'OK' : 'FAIL'} [${res.status}] ${url}`);
+              if (!ok) broken.push({ url, status: res.status });
+            } catch (err) {
+              console.log(`ERROR ${url}: ${err.message}`);
+              broken.push({ url, status: 'ERROR', error: err.message });
+            }
+          }
+          if (broken.length > 0) {
+            writeFileSync('/tmp/broken-links.json', JSON.stringify(broken, null, 2));
+            process.exit(1);
+          }
+          console.log('All affiliate links are healthy.');
+          EOF
+        continue-on-error: true
+      - if: steps.linkcheck.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            import { readFileSync, existsSync } from 'fs';
+            const today = new Date().toISOString().split('T')[0];
+            let brokenList = '';
+            if (existsSync('/tmp/broken-links.json')) {
+              const broken = JSON.parse(readFileSync('/tmp/broken-links.json', 'utf8'));
+              brokenList = broken.map(({ url, status }) => `- \`${status}\` – ${url}`).join('\n');
+            } else {
+              brokenList = '*(details unavailable)*';
+            }
+            const body = `## Broken Affiliate Links\n\nDetected on: ${today}\n\n### Broken destinations\n${brokenList}\n\n### Action items\n- [ ] Verify each URL\n- [ ] Update/remove broken links in data/providers.json`;
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'affiliate,automated',
+            });
+            const duplicate = existing.data.find(i => i.title.startsWith('Broken affiliate links'));
+            if (duplicate) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: duplicate.number,
+                body: `### Updated (${today})\n\n${brokenList}`,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `Broken affiliate links (${today})`,
+                body,
+                labels: ['affiliate', 'automated'],
+              });
+            }
