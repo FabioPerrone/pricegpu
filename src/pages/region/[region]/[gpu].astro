@@ -7,9 +7,10 @@ import { getGPUs, getProviders, getAllPrices, formatPrice } from '../../../lib/p
 import { buildTitle, buildDescription, buildCanonical, buildBreadcrumbs } from '../../../lib/seo.ts';
 
 const REGIONS = ['us-east', 'us-west', 'eu', 'asia', 'us-central'];
-const TOP_GPU_SLUGS = ['h100-80gb-sxm', 'h100-pcie-80gb', 'a100-80gb-sxm', 'a100-40gb-sxm', 'l40s', 'l4', 'a10', 'rtx-4090', 'rtx-3090', 't4', 'v100-16gb-sxm2'];
 
 export function getStaticPaths() {
+  const REGIONS = ['us-east', 'us-west', 'eu', 'asia', 'us-central'];
+  const TOP_GPU_SLUGS = ['h100-80gb-sxm', 'h100-pcie-80gb', 'a100-80gb-sxm', 'a100-40gb-sxm', 'l40s', 'l4', 'a10', 'rtx-4090', 'rtx-3090', 't4', 'v100-16gb-sxm2'];
   const gpus = getGPUs().filter((g) => TOP_GPU_SLUGS.includes(g.slug));
   return REGIONS.flatMap((region) => gpus.map((gpu) => ({ params: { region, gpu: gpu.slug }, props: { gpu } })));
 }
