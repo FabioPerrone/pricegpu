@@ -35,6 +35,7 @@ jobs:
     if: success()
     permissions:
       contents: read
+      repository_dispatch: write
 
     steps:
       - uses: actions/github-script@v7
