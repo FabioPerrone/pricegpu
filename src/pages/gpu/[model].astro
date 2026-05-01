@@ -52,33 +52,17 @@ const faqs = [
     q: `What is the FP16 performance of the ${gpu.name}?`,
     a: `The ${gpu.name} delivers ${gpu.fp16_tflops} TFLOPS of FP16 performance${gpu.fp8_tflops ? `, and ${gpu.fp8_tflops} TFLOPS FP8` : ''}.`,
   },
-  {
-    q: `What architecture is the ${gpu.name}?`,
-    a: `The ${gpu.name} is based on the ${gpu.architecture} architecture, released in ${gpu.released}.`,
-  },
 ];
 
 const schemas = [
-  buildBreadcrumbs([
-    { name: 'Home', url: '/' },
-    { name: 'GPUs', url: '/gpu' },
-    { name: gpu.name, url: `/gpu/${gpu.slug}` },
-  ]),
+  buildBreadcrumbs([{ name: 'Home', url: '/' }, { name: 'GPUs', url: '/gpu' }, { name: gpu.name, url: `/gpu/${gpu.slug}` }]),
   buildProductSchema(gpu, prices),
   buildFAQSchema(faqs),
 ];
 
 const relatedLinks = [
-  ...relatedGPUs.map((g) => ({
-    title: g.name,
-    url: `/gpu/${g.slug}`,
-    description: `${g.vram_gb}GB VRAM · ${g.architecture}`,
-  })),
-  ...providers.slice(0, 3).map((p) => ({
-    title: `${gpu.name} on ${p.name}`,
-    url: `/provider/${p.slug}`,
-    description: p.description,
-  })),
+  ...relatedGPUs.map((g) => ({ title: g.name, url: `/gpu/${g.slug}`, description: `${g.vram_gb}GB VRAM · ${g.architecture}` })),
+  ...providers.slice(0, 3).map((p) => ({ title: `${gpu.name} on ${p.name}`, url: `/provider/${p.slug}`, description: p.description })),
 ];
 ---
 
@@ -89,24 +73,15 @@ const relatedLinks = [
 
   <div style="display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
     <h1 style="font-size: 1.75rem; font-weight: 700;">{gpu.name} Cloud GPU Pricing</h1>
-    {cheapest && (
-      <span style="font-size: 1.1rem; color: var(--text-muted);">
-        from <strong class="accent">{formatPrice(cheapest.price_usd_per_hour)}</strong>/hr
-      </span>
-    )}
+    {cheapest && <span style="font-size: 1.1rem; color: var(--text-muted);">from <strong class="accent">{formatPrice(cheapest.price_usd_per_hour)}</strong>/hr</span>}
   </div>
-  <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
-    {gpu.vram_gb}GB VRAM · {gpu.fp16_tflops} TFLOPS FP16 · {gpu.architecture} · Released {gpu.released}
-  </p>
+  <p style="color: var(--text-muted); margin-bottom: 1.5rem;">{gpu.vram_gb}GB VRAM · {gpu.fp16_tflops} TFLOPS FP16 · {gpu.architecture} · Released {gpu.released}</p>
 
   {cheapestProvider && (
     <div style="margin-bottom: 1.5rem;">
-      <CTA
-        providerSlug={cheapestProvider.slug}
-        providerName={cheapestProvider.name}
+      <CTA providerSlug={cheapestProvider.slug} providerName={cheapestProvider.name}
         headline={`Cheapest ${gpu.name}: ${cheapestProvider.name} at ${formatPrice(cheapest!.price_usd_per_hour)}/hr`}
-        note={`${cheapest!.availability} · ${cheapest!.region} · verify on provider site`}
-      />
+        note={`${cheapest!.availability} · ${cheapest!.region} · verify on provider site`} />
     </div>
   )}
 
@@ -116,39 +91,27 @@ const relatedLinks = [
   <section style="margin-top: 2.5rem;">
     <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">Specifications</h2>
     <div class="card" style="padding: 0; overflow: hidden;">
-      <table>
-        <tbody>
-          <tr><td style="color:var(--text-muted);">VRAM</td><td>{gpu.vram_gb} GB</td></tr>
-          {gpu.memory_bandwidth_gbps && <tr><td style="color:var(--text-muted);">Memory Bandwidth</td><td>{gpu.memory_bandwidth_gbps} GB/s</td></tr>}
-          <tr><td style="color:var(--text-muted);">FP16 TFLOPS</td><td>{gpu.fp16_tflops}</td></tr>
-          {gpu.fp8_tflops && <tr><td style="color:var(--text-muted);">FP8 TFLOPS</td><td>{gpu.fp8_tflops}</td></tr>}
-          <tr><td style="color:var(--text-muted);">Architecture</td><td>{gpu.architecture}</td></tr>
-          <tr><td style="color:var(--text-muted);">Released</td><td>{gpu.released}</td></tr>
-          {gpu.tdp_watts && <tr><td style="color:var(--text-muted);">TDP</td><td>{gpu.tdp_watts}W</td></tr>}
-          {gpu.msrp_usd && <tr><td style="color:var(--text-muted);">MSRP</td><td>${gpu.msrp_usd.toLocaleString()}</td></tr>}
-          <tr><td style="color:var(--text-muted);">Good For</td><td>{gpu.good_for.join(', ')}</td></tr>
-        </tbody>
-      </table>
+      <table><tbody>
+        <tr><td style="color:var(--text-muted);">VRAM</td><td>{gpu.vram_gb} GB</td></tr>
+        {gpu.memory_bandwidth_gbps && <tr><td style="color:var(--text-muted);">Memory Bandwidth</td><td>{gpu.memory_bandwidth_gbps} GB/s</td></tr>}
+        <tr><td style="color:var(--text-muted);">FP16 TFLOPS</td><td>{gpu.fp16_tflops}</td></tr>
+        {gpu.fp8_tflops && <tr><td style="color:var(--text-muted);">FP8 TFLOPS</td><td>{gpu.fp8_tflops}</td></tr>}
+        <tr><td style="color:var(--text-muted);">Architecture</td><td>{gpu.architecture}</td></tr>
+        <tr><td style="color:var(--text-muted);">Released</td><td>{gpu.released}</td></tr>
+        {gpu.tdp_watts && <tr><td style="color:var(--text-muted);">TDP</td><td>{gpu.tdp_watts}W</td></tr>}
+        {gpu.msrp_usd && <tr><td style="color:var(--text-muted);">MSRP</td><td>${gpu.msrp_usd.toLocaleString()}</td></tr>}
+        <tr><td style="color:var(--text-muted);">Good For</td><td>{gpu.good_for.join(', ')}</td></tr>
+      </tbody></table>
     </div>
   </section>
 
   <section style="margin-top: 2.5rem;">
     <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">FAQ</h2>
     <div style="display: flex; flex-direction: column; gap: 1rem;">
-      {faqs.map((faq) => (
-        <div class="card">
-          <div style="font-weight: 600; margin-bottom: 0.4rem;">{faq.q}</div>
-          <div style="color: var(--text-muted); font-size: 0.9rem;">{faq.a}</div>
-        </div>
-      ))}
+      {faqs.map((faq) => (<div class="card"><div style="font-weight: 600; margin-bottom: 0.4rem;">{faq.q}</div><div style="color: var(--text-muted); font-size: 0.9rem;">{faq.a}</div></div>))}
     </div>
   </section>
 
-  {scrapedAt && (
-    <p style="margin-top: 1.5rem; font-size: 0.8rem; color: var(--text-dim);">
-      Last data refresh: {new Date(scrapedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}. Prices are indicative — verify on the provider's site before purchasing.
-    </p>
-  )}
-
+  {scrapedAt && <p style="margin-top: 1.5rem; font-size: 0.8rem; color: var(--text-dim);">Last data refresh: {new Date(scrapedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}. Verify on provider site.</p>}
   <RelatedPages links={relatedLinks} heading="Related GPUs & Providers" />
 </Layout>

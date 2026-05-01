@@ -129,6 +129,14 @@ const schemas = [
         <div style="font-weight: 600;">GPU for 70B LLMs</div>
         <div style="font-size: 0.8rem; color: var(--text-muted);">Min 140GB VRAM required</div>
       </a>
+      <a href="/cheapest/rtx-4090-for-stable-diffusion-xl" class="card" style="text-decoration: none;">
+        <div style="font-weight: 600;">Cheapest RTX 4090 for SDXL</div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">24GB VRAM, best $/image</div>
+      </a>
+      <a href="/compare/lambda-vs-runpod" class="card" style="text-decoration: none;">
+        <div style="font-weight: 600;">Lambda vs RunPod</div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">H100 and A100 pricing</div>
+      </a>
     </div>
   </section>
 
@@ -136,10 +144,30 @@ const schemas = [
     <h2 style="font-size: 1.1rem; margin-bottom: 0.75rem;">Public Pricing API</h2>
     <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
       All pricing data is freely available at <code>/api/prices.json</code>. No auth required. Updated weekly.
-      Licensed CC-BY — use it in your tools, cite PriceGPU.
     </p>
     <a href="/api/prices.json" style="font-family: monospace; font-size: 0.85rem; color: var(--accent);">
       GET https://pricegpu.com/api/prices.json →
     </a>
+  </section>
+
+  <section style="margin-top: 2.5rem;">
+    <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">Latest from the Blog</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem;">
+      <a href="/blog/h100-vs-a100-cloud-price" class="card" style="text-decoration: none;">
+        <div style="font-weight: 600; margin-bottom: 0.25rem;">H100 vs A100: When the Upgrade Pays Off</div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">Break-even analysis for common workloads</div>
+      </a>
+      <a href="/blog/spot-vs-on-demand-gpu" class="card" style="text-decoration: none;">
+        <div style="font-weight: 600; margin-bottom: 0.25rem;">Spot vs On-Demand GPU Instances</div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">When preemptible instances make sense</div>
+      </a>
+      <a href="/blog/rtx-4090-cloud-vs-buy" class="card" style="text-decoration: none;">
+        <div style="font-weight: 600; margin-bottom: 0.25rem;">RTX 4090: Cloud vs Buying</div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">Real break-even calculation</div>
+      </a>
+    </div>
+    <div style="margin-top: 1rem;">
+      <a href="/blog" style="font-size: 0.85rem; color: var(--text-muted);">All blog posts →</a>
+    </div>
   </section>
 </Layout>

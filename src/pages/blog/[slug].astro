@@ -5,10 +5,7 @@ import { getCollection, render } from 'astro:content';
 
 export async function getStaticPaths() {
   const posts = await getCollection('blog');
-  return posts.map((post) => ({
-    params: { slug: post.data.slug },
-    props: { post },
-  }));
+  return posts.map((post) => ({ params: { slug: post.data.slug }, props: { post } }));
 }
 
 const { post } = Astro.props;
@@ -18,20 +15,8 @@ const title = buildTitle([post.data.title, 'PriceGPU']);
 const description = buildDescription(post.data.description);
 const canonical = post.data.canonical_url ?? buildCanonical(`/blog/${post.data.slug}`);
 const schemas = [
-  buildBreadcrumbs([
-    { name: 'Home', url: '/' },
-    { name: 'Blog', url: '/blog' },
-    { name: post.data.title, url: `/blog/${post.data.slug}` },
-  ]),
-  {
-    '@context': 'https://schema.org',
-    '@type': 'Article',
-    headline: post.data.title,
-    description: post.data.description,
-    datePublished: post.data.pubDate.toISOString(),
-    publisher: { '@type': 'Organization', name: 'PriceGPU', url: 'https://pricegpu.com' },
-    url: canonical,
-  },
+  buildBreadcrumbs([{ name: 'Home', url: '/' }, { name: 'Blog', url: '/blog' }, { name: post.data.title, url: `/blog/${post.data.slug}` }]),
+  { '@context': 'https://schema.org', '@type': 'Article', headline: post.data.title, description: post.data.description, datePublished: post.data.pubDate.toISOString(), publisher: { '@type': 'Organization', name: 'PriceGPU', url: 'https://pricegpu.com' }, url: canonical },
 ];
 ---
 
@@ -39,31 +24,16 @@ const schemas = [
   <nav class="breadcrumb">
     <a href="/">Home</a><span>/</span><a href="/blog">Blog</a><span>/</span><span>{post.data.title}</span>
   </nav>
-
   <article>
     <header style="margin-bottom: 2rem;">
-      <h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem; line-height: 1.3;">
-        {post.data.title}
-      </h1>
+      <h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem; line-height: 1.3;">{post.data.title}</h1>
       <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; color: var(--text-muted); font-size: 0.85rem;">
-        <time datetime={post.data.pubDate.toISOString()}>
-          {post.data.pubDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-        </time>
-        {post.data.tags.length > 0 && (
-          <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
-            {post.data.tags.map((tag) => (
-              <span class="badge badge-gray">{tag}</span>
-            ))}
-          </div>
-        )}
+        <time datetime={post.data.pubDate.toISOString()}>{post.data.pubDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</time>
+        {post.data.tags.length > 0 && <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">{post.data.tags.map((tag) => <span class="badge badge-gray">{tag}</span>)}</div>}
       </div>
     </header>
-
-    <div class="prose">
-      <Content />
-    </div>
+    <div class="prose"><Content /></div>
   </article>
-
   <div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border);">
     <a href="/blog" style="font-size: 0.9rem; color: var(--text-muted);">← All posts</a>
   </div>
