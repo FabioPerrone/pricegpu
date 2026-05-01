@@ -12,33 +12,19 @@ const schemas = [buildBreadcrumbs([{ name: 'Home', url: '/' }, { name: 'Disclosu
 ---
 
 <Layout {title} {description} {canonical} {schemas}>
-  <nav class="breadcrumb">
-    <a href="/">Home</a><span>/</span><span>Affiliate Disclosure</span>
-  </nav>
-
+  <nav class="breadcrumb"><a href="/">Home</a><span>/</span><span>Affiliate Disclosure</span></nav>
   <h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 1.5rem;">Affiliate Disclosure</h1>
-
   <div class="prose">
-    <p>
-      PriceGPU participates in affiliate and referral programs operated by cloud GPU providers.
-      When you click a "Rent →" or "Try [Provider]" link on this site and make a purchase or sign up,
-      we may receive a commission or referral credit from that provider — <strong>at no cost to you</strong>.
-    </p>
-
+    <p>PriceGPU participates in affiliate and referral programs. When you click a "Rent →" or "Try [Provider]" link, we may receive a commission — <strong>at no cost to you</strong>.</p>
     <h2>Editorial independence</h2>
-    <p>Affiliate relationships do not influence table ordering (sorted by price only), provider inclusion, pricing data, or specs and ratings.</p>
-
-    <h2>Affiliate programs we participate in</h2>
     <ul>
-      {affiliateProviders.map((p) => (
-        <li><a href={`/provider/${p.slug}`}>{p.name}</a></li>
-      ))}
+      <li><strong>Table ordering</strong> — sorted by price only, lowest first.</li>
+      <li><strong>Provider inclusion</strong> — all major providers listed regardless of affiliate status.</li>
+      <li><strong>Pricing data</strong> — scraped from provider sites, not provided by providers.</li>
     </ul>
-
+    <h2>Affiliate programs we participate in</h2>
+    <ul>{affiliateProviders.map((p) => <li><a href={`/provider/${p.slug}`}>{p.name}</a></li>)}</ul>
     <h2>Link cloaking</h2>
-    <p>
-      Affiliate links go through <code>/go/[provider]</code> redirects on this domain.
-      All outbound affiliate links carry <code>rel="sponsored noopener"</code> per Google's guidelines.
-    </p>
+    <p>Affiliate links go through <code>/go/[provider]</code> redirects. All outbound affiliate links carry <code>rel="sponsored noopener"</code> per Google's guidelines.</p>
   </div>
 </Layout>

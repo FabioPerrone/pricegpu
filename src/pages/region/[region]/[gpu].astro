@@ -3,37 +3,21 @@ import Layout from '../../../layouts/Layout.astro';
 import PriceTable from '../../../components/PriceTable.astro';
 import CTA from '../../../components/CTA.astro';
 import RelatedPages from '../../../components/RelatedPages.astro';
-import {
-  getGPUs, getProviders, getAllPrices, formatPrice,
-} from '../../../lib/pricing.ts';
-import {
-  buildTitle, buildDescription, buildCanonical, buildBreadcrumbs,
-} from '../../../lib/seo.ts';
-
-export function getStaticPaths() {
-  const REGIONS = ['us-east', 'us-west', 'eu', 'asia', 'us-central'];
-  const TOP_GPU_SLUGS = [
-    'h100-80gb-sxm', 'h100-pcie-80gb', 'a100-80gb-sxm', 'a100-40gb-sxm',
-    'l40s', 'l4', 'a10', 'rtx-4090', 'rtx-3090', 't4', 'v100-16gb-sxm2',
-  ];
-  const gpus = getGPUs().filter((g) => TOP_GPU_SLUGS.includes(g.slug));
-  return REGIONS.flatMap((region) =>
-    gpus.map((gpu) => ({ params: { region, gpu: gpu.slug }, props: { gpu } }))
-  );
-}
+import { getGPUs, getProviders, getAllPrices, formatPrice } from '../../../lib/pricing.ts';
+import { buildTitle, buildDescription, buildCanonical, buildBreadcrumbs } from '../../../lib/seo.ts';
 
 const REGIONS = ['us-east', 'us-west', 'eu', 'asia', 'us-central'];
-const TOP_GPU_SLUGS = [
-  'h100-80gb-sxm', 'h100-pcie-80gb', 'a100-80gb-sxm', 'a100-40gb-sxm',
-  'l40s', 'l4', 'a10', 'rtx-4090', 'rtx-3090', 't4', 'v100-16gb-sxm2',
-];
+const TOP_GPU_SLUGS = ['h100-80gb-sxm', 'h100-pcie-80gb', 'a100-80gb-sxm', 'a100-40gb-sxm', 'l40s', 'l4', 'a10', 'rtx-4090', 'rtx-3090', 't4', 'v100-16gb-sxm2'];
+
+export function getStaticPaths() {
+  const gpus = getGPUs().filter((g) => TOP_GPU_SLUGS.includes(g.slug));
+  return REGIONS.flatMap((region) => gpus.map((gpu) => ({ params: { region, gpu: gpu.slug }, props: { gpu } })));
+}
 
 const { region } = Astro.params;
 const { gpu } = Astro.props;
 const providers = getProviders();
-const allPrices = getAllPrices();
-
-const regionPrices = allPrices
+const regionPrices = getAllPrices()
   .filter((p) => p.gpu_slug === gpu.slug && p.region === region)
   .map((p) => ({ ...p, provider_name: providers.find((pv) => pv.slug === p.provider_slug)?.name }))
   .sort((a, b) => a.price_usd_per_hour - b.price_usd_per_hour);
@@ -43,66 +27,23 @@ const cheapestProvider = cheapest ? providers.find((p) => p.slug === cheapest.pr
 const regionLabel = region.replace('-', ' ').toUpperCase();
 
 const title = buildTitle([`${gpu.name} Price in ${regionLabel}`, 'PriceGPU']);
-const description = buildDescription(
-  `${gpu.name} cloud rental in ${regionLabel}. ${regionPrices.length} offers${cheapest ? `, from ${formatPrice(cheapest.price_usd_per_hour)}/hr` : ''}. ${gpu.vram_gb}GB VRAM.`
-);
+const description = buildDescription(`${gpu.name} cloud rental in ${regionLabel}. ${regionPrices.length} offers${cheapest ? `, from ${formatPrice(cheapest.price_usd_per_hour)}/hr` : ''}. ${gpu.vram_gb}GB VRAM.`);
 const canonical = buildCanonical(`/region/${region}/${gpu.slug}`);
-
-const schemas = [
-  buildBreadcrumbs([
-    { name: 'Home', url: '/' },
-    { name: 'By Region', url: '/region' },
-    { name: regionLabel, url: `/region/${region}` },
-    { name: gpu.name, url: canonical },
-  ]),
-];
+const schemas = [buildBreadcrumbs([{ name: 'Home', url: '/' }, { name: regionLabel, url: `/region/${region}` }, { name: gpu.name, url: canonical }])];
 
 const relatedLinks = [
   { title: `${gpu.name} — all regions`, url: `/gpu/${gpu.slug}`, description: undefined },
-  ...REGIONS.filter((r) => r !== region).slice(0, 4).map((r) => ({
-    title: `${gpu.name} in ${r.replace('-', ' ').toUpperCase()}`,
-    url: `/region/${r}/${gpu.slug}`,
-    description: undefined,
-  })),
-  ...TOP_GPU_SLUGS.filter((s) => s !== gpu.slug).slice(0, 2).map((s) => {
-    const g = getGPUs().find((gg) => gg.slug === s);
-    return { title: `${g?.name ?? s} in ${regionLabel}`, url: `/region/${region}/${s}`, description: undefined };
-  }),
+  ...REGIONS.filter((r) => r !== region).slice(0, 4).map((r) => ({ title: `${gpu.name} in ${r.replace('-', ' ').toUpperCase()}`, url: `/region/${r}/${gpu.slug}`, description: undefined })),
 ];
 ---
 
 <Layout {title} {description} {canonical} {schemas}>
-  <nav class="breadcrumb">
-    <a href="/">Home</a><span>/</span>
-    <a href={`/region/${region}`}>{regionLabel}</a><span>/</span>
-    <span>{gpu.name}</span>
-  </nav>
-
-  <h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem;">
-    {gpu.name} Cloud Pricing — {regionLabel}
-  </h1>
-  <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
-    {gpu.vram_gb}GB VRAM · {gpu.fp16_tflops} TFLOPS FP16 · Region: {regionLabel}
-  </p>
-
-  {cheapestProvider && (
-    <div style="margin-bottom: 1.5rem;">
-      <CTA
-        providerSlug={cheapestProvider.slug}
-        providerName={cheapestProvider.name}
-        headline={`Cheapest in ${regionLabel}: ${formatPrice(cheapest!.price_usd_per_hour)}/hr on ${cheapestProvider.name}`}
-        note={`${cheapest!.availability} · verify on provider site`}
-      />
-    </div>
-  )}
-
-  {regionPrices.length === 0 ? (
-    <div class="card">
-      <p style="color: var(--text-muted);">No {regionLabel} pricing data currently available for the {gpu.name}. See <a href={`/gpu/${gpu.slug}`}>all regions →</a></p>
-    </div>
-  ) : (
-    <PriceTable prices={regionPrices} gpuName={gpu.name} />
-  )}
-
+  <nav class="breadcrumb"><a href="/">Home</a><span>/</span><a href={`/region/${region}`}>{regionLabel}</a><span>/</span><span>{gpu.name}</span></nav>
+  <h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem;">{gpu.name} Cloud Pricing — {regionLabel}</h1>
+  <p style="color: var(--text-muted); margin-bottom: 1.5rem;">{gpu.vram_gb}GB VRAM · {gpu.fp16_tflops} TFLOPS FP16 · Region: {regionLabel}</p>
+  {cheapestProvider && <div style="margin-bottom: 1.5rem;"><CTA providerSlug={cheapestProvider.slug} providerName={cheapestProvider.name} headline={`Cheapest in ${regionLabel}: ${formatPrice(cheapest!.price_usd_per_hour)}/hr on ${cheapestProvider.name}`} note={`${cheapest!.availability} · verify on provider site`} /></div>}
+  {regionPrices.length === 0
+    ? <div class="card"><p style="color: var(--text-muted);">No {regionLabel} data for the {gpu.name}. <a href={`/gpu/${gpu.slug}`}>See all regions →</a></p></div>
+    : <PriceTable prices={regionPrices} gpuName={gpu.name} />}
   <RelatedPages links={relatedLinks} heading="Related" />
 </Layout>
