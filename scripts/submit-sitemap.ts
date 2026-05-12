@@ -2,7 +2,7 @@ import { createSign } from 'crypto';
 
 const SA_JSON = process.env.GOOGLE_SEARCH_CONSOLE_SA_JSON;
 const BING_API_KEY = process.env.BING_WEBMASTER_API_KEY;
-const SITE_URL = 'https://pricegpu.com/';
+const SITE_URL = 'sc-domain:pricegpu.com';
 const SITEMAP_URL = 'https://pricegpu.com/sitemap.xml';
 
 if (!SA_JSON) {
