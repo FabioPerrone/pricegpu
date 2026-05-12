@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\(JSON.stringify\\(Object.keys\\({...p.dependencies,...p.devDependencies}\\), null, 2\\)\\)\")"
+      "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\(JSON.stringify\\(Object.keys\\({...p.dependencies,...p.devDependencies}\\), null, 2\\)\\)\")",
+      "Bash(node -e \"const d=require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\); const p=JSON.parse\\(d\\); console.log\\(p.map\\(x=>\\({slug:x.slug,name:x.name,affiliate_param_env:x.affiliate_param_env}\\)\\).map\\(x=>JSON.stringify\\(x\\)\\).join\\('\\\\n'\\)\\)\")"
     ]
   }
 }

@@ -1,21 +1,39 @@
 ---
 import { buildTitle, buildCanonical } from '../../lib/seo.ts';
+import { getProviders } from '../../lib/pricing.ts';
 import fs from 'node:fs';
 import path from 'node:path';
 
 const title = buildTitle(['Revenue Dashboard', 'PriceGPU']);
 const canonical = buildCanonical('/admin/revenue');
 
-let revenueData: Record<string, unknown> = {};
-try {
-  const raw = fs.readFileSync(
-    path.resolve(process.cwd(), 'data/revenue.json'),
-    'utf-8'
-  );
-  revenueData = JSON.parse(raw);
-} catch {
-  revenueData = { note: 'Revenue data not yet available.' };
+function readJson<T>(file: string, fallback: T): T {
+  try {
+    return JSON.parse(fs.readFileSync(path.resolve(process.cwd(), file), 'utf-8'));
+  } catch {
+    return fallback;
+  }
 }
+
+const revenue = readJson('data/revenue.json', { pageviews: 0, lastSync: null, status: 'unknown' }) as {
+  pageviews: number;
+  lastSync: string | null;
+  status: string;
+  note?: string;
+};
+
+const affiliateReport = readJson('data/affiliate-report.json', null) as null | {
+  generatedAt: string;
+  periodDays: number;
+  from: string;
+  to: string;
+  totalClicks: number;
+  byProvider: { slug: string; clicks: number }[];
+};
+
+const providers = getProviders();
+const providerMap = Object.fromEntries(providers.map(p => [p.slug, p.name]));
+const hasAffiliateProgram = new Set(providers.filter(p => p.affiliate_param_env).map(p => p.slug));
 ---
 
 <!doctype html>
@@ -27,20 +45,98 @@ try {
     <meta name="robots" content="noindex, nofollow" />
     <link rel="canonical" href={canonical} />
     <style>
-      body { background: #0d0d0d; color: #e8e8e8; font-family: monospace; padding: 2rem; max-width: 800px; margin: 0 auto; }
-      h1 { font-size: 1.5rem; margin-bottom: 1rem; }
-      pre { background: #161616; border: 1px solid #2a2a2a; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.85rem; }
+      *, *::before, *::after { box-sizing: border-box; }
+      body { background: #0d0d0d; color: #e8e8e8; font-family: monospace; padding: 2rem; max-width: 900px; margin: 0 auto; }
+      h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+      h2 { font-size: 1rem; color: #aaa; margin: 2rem 0 0.75rem; border-bottom: 1px solid #2a2a2a; padding-bottom: 0.4rem; }
       a { color: #00D26A; }
+      .meta { color: #666; font-size: 0.8rem; margin-bottom: 2rem; }
+      .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+      .stat { background: #161616; border: 1px solid #2a2a2a; border-radius: 6px; padding: 1rem; }
+      .stat-value { font-size: 1.6rem; font-weight: bold; color: #00D26A; }
+      .stat-label { font-size: 0.75rem; color: #888; margin-top: 0.25rem; }
+      table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+      th { text-align: left; padding: 0.5rem 0.75rem; color: #888; border-bottom: 1px solid #2a2a2a; font-weight: normal; }
+      td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #1a1a1a; }
+      tr:hover td { background: #111; }
+      .badge { display: inline-block; padding: 0.1rem 0.4rem; border-radius: 3px; font-size: 0.7rem; }
+      .badge-yes { background: #00D26A22; color: #00D26A; border: 1px solid #00D26A44; }
+      .badge-no { background: #ff444422; color: #ff6666; border: 1px solid #ff444444; }
+      .bar-wrap { background: #1a1a1a; border-radius: 3px; height: 6px; width: 100%; margin-top: 4px; }
+      .bar { background: #00D26A; height: 6px; border-radius: 3px; }
+      pre { background: #161616; border: 1px solid #2a2a2a; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.75rem; }
+      details summary { cursor: pointer; color: #666; font-size: 0.8rem; margin-top: 2rem; }
     </style>
   </head>
   <body>
     <a href="/">← Back to site</a>
     <h1>Revenue Dashboard</h1>
-    <p style="color: #888; font-size: 0.85rem;">
-      This page is gated by Cloudflare Access — only the site owner's email can view it.
-      Configure in Cloudflare Zero Trust → Access → Applications.
+    <p class="meta">
+      Gated by Cloudflare Access. Last sync: {revenue.lastSync ? new Date(revenue.lastSync).toUTCString() : 'never'}
     </p>
-    <h2 style="font-size: 1rem; margin-top: 1.5rem;">Revenue Data</h2>
-    <pre>{JSON.stringify(revenueData, null, 2)}</pre>
+
+    <h2>Traffic</h2>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-value">{revenue.pageviews.toLocaleString()}</div>
+        <div class="stat-label">Pageviews (last 30 days)</div>
+      </div>
+      {affiliateReport && (
+        <div class="stat">
+          <div class="stat-value">{affiliateReport.totalClicks.toLocaleString()}</div>
+          <div class="stat-label">Affiliate clicks (last {affiliateReport.periodDays} days)</div>
+        </div>
+      )}
+      <div class="stat">
+        <div class="stat-value">{revenue.pageviews >= 10000 ? '✅' : `${Math.round(revenue.pageviews / 100)}%`}</div>
+        <div class="stat-label">Ezoic threshold (10k pageviews)</div>
+      </div>
+    </div>
+
+    {affiliateReport ? (
+      <>
+        <h2>Affiliate Clicks by Provider — last {affiliateReport.periodDays} days ({affiliateReport.from} → {affiliateReport.to})</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Provider</th>
+              <th>Clicks</th>
+              <th>Share</th>
+              <th>Affiliate program</th>
+            </tr>
+          </thead>
+          <tbody>
+            {affiliateReport.byProvider.map(row => {
+              const pct = affiliateReport.totalClicks > 0
+                ? Math.round((row.clicks / affiliateReport.totalClicks) * 100)
+                : 0;
+              const hasRef = hasAffiliateProgram.has(row.slug);
+              return (
+                <tr>
+                  <td>{providerMap[row.slug] ?? row.slug}</td>
+                  <td>{row.clicks.toLocaleString()}</td>
+                  <td>
+                    {pct}%
+                    <div class="bar-wrap"><div class="bar" style={`width:${pct}%`}></div></div>
+                  </td>
+                  <td>
+                    <span class={`badge ${hasRef ? 'badge-yes' : 'badge-no'}`}>
+                      {hasRef ? 'tracked' : 'no ref'}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </>
+    ) : (
+      <p style="color:#666;font-size:0.85rem;">No affiliate report yet. Run <code>revenue-sync</code> workflow.</p>
+    )}
+
+    <details>
+      <summary>Raw JSON</summary>
+      <pre>{JSON.stringify({ revenue, affiliateReport }, null, 2)}</pre>
+    </details>
   </body>
 </html>
