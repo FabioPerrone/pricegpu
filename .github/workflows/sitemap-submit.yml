@@ -5,19 +5,23 @@ on:
     - cron: '0 9 * * 0'
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   submit:
-    name: Submit sitemap to Google & Bing
+    name: Submit sitemap to Google Search Console
     runs-on: ubuntu-latest
     permissions:
       contents: none
 
     steps:
-      - name: Ping Bing Webmaster
-        run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X POST "https://ssl.bing.com/webmaster/api.svc/json/SubmitSitemap?apikey=${{ secrets.BING_WEBMASTER_API_KEY }}&siteUrl=https%3A%2F%2Fpricegpu.com%2F" \
-            -H "Content-Type: application/json" \
-            -d '"https://pricegpu.com/sitemap.xml"')
-          echo "Bing response: $STATUS"
-          [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 300 ] || exit 1
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx tsx scripts/submit-sitemap.ts
+        env:
+          GOOGLE_SEARCH_CONSOLE_SA_JSON: ${{ secrets.GOOGLE_SEARCH_CONSOLE_SA_JSON }}
