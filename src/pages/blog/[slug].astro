@@ -16,7 +16,24 @@ const description = buildDescription(post.data.description);
 const canonical = post.data.canonical_url ?? buildCanonical(`/blog/${post.data.slug}`);
 const schemas = [
   buildBreadcrumbs([{ name: 'Home', url: '/' }, { name: 'Blog', url: '/blog' }, { name: post.data.title, url: `/blog/${post.data.slug}` }]),
-  { '@context': 'https://schema.org', '@type': 'Article', headline: post.data.title, description: post.data.description, datePublished: post.data.pubDate.toISOString(), publisher: { '@type': 'Organization', name: 'PriceGPU', url: 'https://pricegpu.com' }, url: canonical },
+  {
+    '@context': 'https://schema.org',
+    '@type': post.data.isNews ? 'NewsArticle' : 'Article',
+    headline: post.data.title,
+    description: post.data.description,
+    datePublished: post.data.pubDate.toISOString(),
+    dateModified: post.data.pubDate.toISOString(),
+    author: { '@type': 'Person', name: post.data.author, url: 'https://pricegpu.com/about' },
+    publisher: {
+      '@type': 'Organization',
+      name: 'PriceGPU',
+      url: 'https://pricegpu.com',
+      logo: { '@type': 'ImageObject', url: 'https://pricegpu.com/favicon.svg' },
+    },
+    url: canonical,
+    isAccessibleForFree: true,
+    inLanguage: 'en-US',
+  },
 ];
 ---
 
@@ -28,6 +45,7 @@ const schemas = [
     <header style="margin-bottom: 2rem;">
       <h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem; line-height: 1.3;">{post.data.title}</h1>
       <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; color: var(--text-muted); font-size: 0.85rem;">
+        <span>By <strong style="color:var(--text-muted)">{post.data.author}</strong></span>
         <time datetime={post.data.pubDate.toISOString()}>{post.data.pubDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</time>
         {post.data.tags.length > 0 && <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">{post.data.tags.map((tag) => <span class="badge badge-gray">{tag}</span>)}</div>}
       </div>

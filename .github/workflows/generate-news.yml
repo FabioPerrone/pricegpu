@@ -1,0 +1,53 @@
+name: Generate Daily News
+
+on:
+  schedule:
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  generate:
+    name: Generate GPU market news article
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx tsx scripts/generate-news.ts
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      - run: |
+          git config user.email "bot@pricegpu.com"
+          git config user.name "PriceGPU Bot"
+          git add src/content/blog/
+          if git diff --cached --quiet; then
+            echo "No new article today."
+          else
+            git commit -m "chore: daily GPU market news $(date -u '+%Y-%m-%d')"
+            git push
+          fi
+      - name: Trigger deploy
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'deploy.yml',
+              ref: 'main',
+            });

@@ -8,9 +8,11 @@ const blog = defineCollection({
     description: z.string(),
     pubDate: z.coerce.date(),
     slug: z.string(),
+    author: z.string().default('Alex Torres'),
     canonical_url: z.string().url().optional(),
     tags: z.array(z.string()).default([]),
     draft: z.boolean().default(false),
+    isNews: z.boolean().default(false),
   }),
 });
 
