@@ -19,7 +19,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            import { readFileSync, existsSync } from 'fs';
+            const { readFileSync, existsSync } = require('fs');
             const REVENUE_FILE = 'data/revenue.json';
             const PAGEVIEW_THRESHOLD = 10_000;
             if (!existsSync(REVENUE_FILE)) {
@@ -58,3 +58,4 @@ jobs:
               body: `## Traffic Threshold Reached\n\nAs of ${today}, pricegpu.com has ${pageviews.toLocaleString()} pageviews.`,
               labels: ['monetization', 'automated'],
             });
+
