@@ -172,7 +172,7 @@ const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     'Content-Type': 'application/json',
   },
   body: JSON.stringify({
-    model: 'qwen-qwq-32b',
+    model: 'qwen3-32b',
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt },
