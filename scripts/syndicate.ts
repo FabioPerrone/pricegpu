@@ -1,4 +1,3 @@
-import { fetch } from 'undici';
 
 const DEVTO_API_KEY = process.env.DEVTO_API_KEY;
 const HASHNODE_API_KEY = process.env.HASHNODE_API_KEY;
