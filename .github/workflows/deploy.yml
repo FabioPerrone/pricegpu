@@ -21,6 +21,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: 'npm'
       - run: npm ci
       - run: npm run build
       - name: Publish to Cloudflare Pages
@@ -30,26 +31,3 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: pricegpu
           directory: dist
-
-  notify:
-    name: Emit deploy_success event
-    needs: deploy
-    runs-on: ubuntu-latest
-    if: success()
-    permissions:
-      contents: read
-
-    steps:
-      - uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            await github.rest.repos.createDispatchEvent({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              event_type: 'deploy_success',
-              client_payload: {
-                sha: context.sha,
-                ref: context.ref,
-              },
-            });

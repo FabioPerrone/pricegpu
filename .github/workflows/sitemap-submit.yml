@@ -10,19 +10,14 @@ jobs:
     name: Submit sitemap to Google & Bing
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: none
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-      - run: npm ci
-      - run: |
-          SITEMAP_URL="https://pricegpu.com/sitemap.xml"
-          curl -s -o /dev/null -w "Bing: %{http_code}" \
+      - name: Ping Bing Webmaster
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
             -X POST "https://ssl.bing.com/webmaster/api.svc/json/SubmitSitemap?apikey=${{ secrets.BING_WEBMASTER_API_KEY }}" \
             -H "Content-Type: application/json" \
-            -d "{\"siteUrl\":\"https://pricegpu.com/\",\"sitemap\":\"${SITEMAP_URL}\"}"
-          echo ""
+            -d '{"siteUrl":"https://pricegpu.com/","sitemap":"https://pricegpu.com/sitemap.xml"}')
+          echo "Bing response: $STATUS"
+          [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 300 ] || exit 1
