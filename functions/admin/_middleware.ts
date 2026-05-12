@@ -46,13 +46,9 @@ function isAuthenticated(request: Request, env: Env): boolean {
   return match?.[1] === env.ADMIN_SESSION_TOKEN;
 }
 
-export async function onRequest(context: {
-  request: Request;
-  env: Env;
-  next: () => Promise<Response>;
-}): Promise<Response> {
-  const { request, env, next } = context;
-
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function onRequest(context: any): Promise<Response> {
+  const { request, env, next } = context as { request: Request; env: Env; next: () => Promise<Response> };
   if (!env.ADMIN_PASSWORD || !env.ADMIN_SESSION_TOKEN) {
     return new Response('Admin not configured.', { status: 503 });
   }

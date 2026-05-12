@@ -24,6 +24,7 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run build
+      - run: cp -r functions dist/
       - name: Publish to Cloudflare Pages
         run: npx wrangler pages deploy dist --project-name=pricegpu
         env:
