@@ -24,19 +24,10 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - run: npm ci
-      - run: |
-          node --input-type=module <<'EOF'
-          import { writeFileSync, existsSync, readFileSync } from 'fs';
-          const OUTPUT = 'data/revenue.json';
-          const existing = existsSync(OUTPUT) ? JSON.parse(readFileSync(OUTPUT, 'utf8')) : {};
-          const entry = {
-            ...existing,
-            lastSync: new Date().toISOString(),
-            status: 'placeholder',
-            note: 'Revenue sync not yet configured',
-          };
-          writeFileSync(OUTPUT, JSON.stringify(entry, null, 2) + '\n');
-          EOF
+      - run: npx tsx scripts/sync-revenue.ts
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - run: |
           git config user.email "bot@pricegpu.com"
           git config user.name "PriceGPU Bot"
