@@ -5,7 +5,7 @@ import crypto from "crypto";
 
 const DATA_DIR = path.resolve("data");
 const GENERATED_DIR = path.join(DATA_DIR, "generated");
-const GROQ_MODEL = "qwen3-32b";
+const GROQ_MODEL = "llama-3.3-70b-versatile";
 const GROQ_FALLBACK_MODEL = "llama-3.3-70b-versatile";
 
 interface GeneratedContent {
