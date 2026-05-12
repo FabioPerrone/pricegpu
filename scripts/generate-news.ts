@@ -140,7 +140,7 @@ STRICT WRITING RULES:
 - Use specific numbers with two decimal places for prices: "$2.49/hr", not "around $2.50"
 - Attribution: cite data as "PriceGPU tracking shows" or "according to PriceGPU data" — not "recent studies show"
 - Tone: confident, slightly dry, technically precise
-- Headline: max 65 characters, must contain a specific number or GPU name, no clickbait
+- Headline: max 65 characters, punchy and specific — use numbers, dollar amounts, or percentages. Make engineers want to click. Examples of good style: "RunPod Slashes H100 Prices 18% as Vast.ai Holds Firm", "H100 Hits $1.99/hr — Cheapest Ever on Any Major Cloud", "A100 Glut Drives Prices to 6-Month Low Across Five Providers"
 - Write third-person throughout — do NOT refer to yourself as "I"`;
 
 const userPrompt = `Write a GPU cloud market news article for ${today}.
