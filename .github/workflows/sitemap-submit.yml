@@ -10,7 +10,7 @@ env:
 
 jobs:
   submit:
-    name: Submit sitemap to Google Search Console
+    name: Submit sitemap to Bing Webmaster
     runs-on: ubuntu-latest
     permissions:
       contents: none
@@ -24,5 +24,4 @@ jobs:
       - run: npm ci
       - run: npx tsx scripts/submit-sitemap.ts
         env:
-          GOOGLE_SEARCH_CONSOLE_SA_JSON: ${{ secrets.GOOGLE_SEARCH_CONSOLE_SA_JSON }}
           BING_WEBMASTER_API_KEY: ${{ secrets.BING_WEBMASTER_API_KEY }}
