@@ -1,9 +1,9 @@
 {
   "last_updated": "2026-04-29T00:00:00Z",
-  "note": "Revenue sync not yet configured",
+  "note": "Cloudflare Analytics — last 30 days",
   "total_earned_usd": 0,
   "providers": {},
-  "pageviews": 0,
-  "lastSync": "2026-05-06T11:08:06.112Z",
-  "status": "placeholder"
+  "pageviews": 2227,
+  "lastSync": "2026-05-12T12:25:00.106Z",
+  "status": "live"
 }
