@@ -33,7 +33,6 @@ async function getPageviews(zoneId: string): Promise<number> {
         httpRequests1dGroups(
           limit: ${DAYS}
           filter: { date_geq: "${fmt(start)}", date_leq: "${fmt(end)}" }
-          orderBy: [date_ASC]
         ) {
           sum { pageViews }
         }
