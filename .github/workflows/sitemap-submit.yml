@@ -25,3 +25,4 @@ jobs:
       - run: npx tsx scripts/submit-sitemap.ts
         env:
           GOOGLE_SEARCH_CONSOLE_SA_JSON: ${{ secrets.GOOGLE_SEARCH_CONSOLE_SA_JSON }}
+          BING_WEBMASTER_API_KEY: ${{ secrets.BING_WEBMASTER_API_KEY }}

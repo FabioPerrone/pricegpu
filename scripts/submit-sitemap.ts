@@ -1,6 +1,7 @@
 import { createSign } from 'crypto';
 
 const SA_JSON = process.env.GOOGLE_SEARCH_CONSOLE_SA_JSON;
+const BING_API_KEY = process.env.BING_WEBMASTER_API_KEY;
 const SITE_URL = 'https://pricegpu.com/';
 const SITEMAP_URL = 'https://pricegpu.com/sitemap.xml';
 
@@ -58,9 +59,30 @@ const res = await fetch(url, {
 });
 
 if (res.status === 204 || res.status === 200) {
-  console.log(`Sitemap submitted to Google Search Console (${res.status})`);
+  console.log(`GSC: sitemap submitted (${res.status})`);
 } else {
   const body = await res.text();
   console.error(`GSC error ${res.status}: ${body}`);
   process.exit(1);
+}
+
+// Bing Webmaster
+if (BING_API_KEY) {
+  const bingRes = await fetch(
+    `https://ssl.bing.com/webmaster/api.svc/json/SubmitSitemap?apikey=${BING_API_KEY}&siteUrl=${encodeURIComponent(SITE_URL)}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      body: JSON.stringify({ sitemap: SITEMAP_URL }),
+    }
+  );
+  if (bingRes.status === 200) {
+    console.log('Bing: sitemap submitted (200)');
+  } else {
+    const body = await bingRes.text();
+    console.error(`Bing error ${bingRes.status}: ${body}`);
+    process.exit(1);
+  }
+} else {
+  console.log('Bing: skipped (no BING_WEBMASTER_API_KEY)');
 }
