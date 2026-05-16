@@ -1,4 +1,4 @@
-import { existsSync, writeFileSync, readFileSync, readdirSync } from 'fs';
+import { existsSync, writeFileSync, readFileSync, readdirSync, mkdirSync } from 'fs';
 import { execSync } from 'child_process';
 import path from 'path';
 
@@ -6,6 +6,77 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const PRICES_DIR = 'data/prices';
 const BLOG_DIR = 'src/content/blog';
 const AUTHOR = 'Alex Torres';
+const OG_DIR = 'public/og';
+
+// ── OG image ──────────────────────────────────────────────────────────────────
+
+interface PricePoint { gpu: string; price: number; provider: string }
+
+function escXml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function wrapWords(text: string, maxChars: number): string[] {
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let current = '';
+  for (const word of words) {
+    const next = current ? `${current} ${word}` : word;
+    if (next.length <= maxChars) { current = next; }
+    else { if (current) lines.push(current); current = word; }
+  }
+  if (current) lines.push(current);
+  return lines;
+}
+
+async function generateOgImage(headline: string, prices: PricePoint[]): Promise<Buffer> {
+  const { Resvg } = await import('@resvg/resvg-js');
+
+  const lines = wrapWords(headline, 38);
+  const fontSize = lines.length > 2 ? 44 : 52;
+  const headlineSvg = lines.slice(0, 3).map((line, i) =>
+    `<text x="60" y="${200 + i * (fontSize + 14)}" font-size="${fontSize}" fill="#f1f5f9" font-family="DejaVu Sans,Liberation Sans,Arial,sans-serif" font-weight="bold">${escXml(line)}</text>`
+  ).join('\n  ');
+
+  const BOX_Y = 430;
+  const BOX_W = 255;
+  const pricesSvg = prices.slice(0, 4).map((p, i) => {
+    const x = 60 + i * (BOX_W + 20);
+    const gpuLabel = p.gpu.replace(/-/g, ' ').replace(/\b(sxm|pcie|gb)\b/gi, s => s.toUpperCase());
+    return `
+  <rect x="${x}" y="${BOX_Y}" width="${BOX_W}" height="100" rx="10" fill="#1e293b"/>
+  <text x="${x + 20}" y="${BOX_Y + 25}" font-size="12" fill="#94a3b8" font-family="DejaVu Sans,Liberation Sans,Arial,sans-serif">${escXml(gpuLabel)}</text>
+  <text x="${x + 20}" y="${BOX_Y + 62}" font-size="28" fill="#34d399" font-family="DejaVu Sans,Liberation Sans,Arial,sans-serif" font-weight="bold">$${p.price.toFixed(2)}/hr</text>
+  <text x="${x + 20}" y="${BOX_Y + 85}" font-size="13" fill="#64748b" font-family="DejaVu Sans,Liberation Sans,Arial,sans-serif">${escXml(p.provider)}</text>`;
+  }).join('');
+
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630">
+  <rect width="1200" height="630" fill="#0f172a"/>
+  <rect width="1200" height="5" fill="#3b82f6"/>
+  <text x="60" y="90" font-size="15" fill="#60a5fa" font-family="DejaVu Sans,Liberation Sans,Arial,sans-serif" font-weight="bold">GPU MARKET UPDATE · PRICEGPU.COM</text>
+  ${headlineSvg}
+  ${pricesSvg}
+  <text x="60" y="598" font-size="13" fill="#334155" font-family="DejaVu Sans,Liberation Sans,Arial,sans-serif">Live pricing data tracked across 15 cloud providers</text>
+</svg>`;
+
+  const resvg = new Resvg(svg, { font: { loadSystemFonts: true } });
+  return Buffer.from(resvg.render().asPng());
+}
+
+// ── Price table ───────────────────────────────────────────────────────────────
+
+function buildPriceTable(snapshot: Record<string, { price: number; provider: string }>, gpuList: string[]): string {
+  const rows = gpuList
+    .filter(g => snapshot[g])
+    .map(g => {
+      const { price, provider } = snapshot[g];
+      const label = g.replace(/-/g, ' ').replace(/\b(sxm|pcie|gb)\b/gi, s => s.toUpperCase());
+      return `| ${label} | $${price.toFixed(2)}/hr | ${provider} |`;
+    });
+  if (!rows.length) return '';
+  return `\n\n## Current GPU Prices\n\n| GPU | Best Price | Provider |\n|-----|-----------|----------|\n${rows.join('\n')}\n\n*Data from PriceGPU live tracking across 15 providers.*`;
+}
 
 if (!GROQ_API_KEY) {
   console.error('Missing GROQ_API_KEY');
@@ -206,6 +277,31 @@ for (const gpu of KEY_GPUS) {
 }
 const uniqueTags = [...new Set(tags)].slice(0, 6);
 
+// ── Generate OG image ─────────────────────────────────────────────────────────
+
+mkdirSync(OG_DIR, { recursive: true });
+const ogRelPath = `${OG_DIR}/${slug}.png`;
+const ogUrl = `/og/${slug}.png`;
+
+const topPrices: PricePoint[] = KEY_GPUS
+  .filter(g => marketSnapshot[g])
+  .slice(0, 4)
+  .map(g => ({ gpu: g, price: marketSnapshot[g].price, provider: marketSnapshot[g].provider }));
+
+let ogImageWritten = false;
+try {
+  const pngBuffer = await generateOgImage(headline, topPrices);
+  writeFileSync(ogRelPath, pngBuffer);
+  ogImageWritten = true;
+  console.log(`OG image written: ${ogRelPath}`);
+} catch (err) {
+  console.warn('OG image generation failed (non-fatal):', err);
+}
+
+// ── Price table ───────────────────────────────────────────────────────────────
+
+const priceTable = buildPriceTable(marketSnapshot, KEY_GPUS);
+
 // ── Write MDX ─────────────────────────────────────────────────────────────────
 
 const mdx = `---
@@ -216,9 +312,11 @@ slug: ${slug}
 author: "${AUTHOR}"
 tags: [${uniqueTags.map(t => `"${t}"`).join(', ')}]
 isNews: true
+${ogImageWritten ? `image: "${ogUrl}"` : ''}
 ---
 
 ${body}
+${priceTable}
 `;
 
 writeFileSync(outputPath, mdx);

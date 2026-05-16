@@ -14,6 +14,8 @@ const { Content } = await render(post);
 const title = buildTitle([post.data.title, 'PriceGPU']);
 const description = buildDescription(post.data.description);
 const canonical = post.data.canonical_url ?? buildCanonical(`/blog/${post.data.slug}`);
+const ogImage = post.data.image ? `https://pricegpu.com${post.data.image}` : undefined;
+
 const schemas = [
   buildBreadcrumbs([{ name: 'Home', url: '/' }, { name: 'Blog', url: '/blog' }, { name: post.data.title, url: `/blog/${post.data.slug}` }]),
   {
@@ -33,11 +35,14 @@ const schemas = [
     url: canonical,
     isAccessibleForFree: true,
     inLanguage: 'en-US',
+    ...(ogImage && {
+      image: { '@type': 'ImageObject', url: ogImage, width: 1200, height: 630 },
+    }),
   },
 ];
 ---
 
-<Layout {title} {description} {canonical} {schemas}>
+<Layout {title} {description} {canonical} {schemas} ogType={post.data.isNews ? 'article' : 'website'} {ogImage}>
   <nav class="breadcrumb">
     <a href="/">Home</a><span>/</span><a href="/blog">Blog</a><span>/</span><span>{post.data.title}</span>
   </nav>

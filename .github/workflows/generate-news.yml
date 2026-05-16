@@ -32,7 +32,7 @@ jobs:
       - run: |
           git config user.email "bot@pricegpu.com"
           git config user.name "PriceGPU Bot"
-          git add src/content/blog/
+          git add src/content/blog/ public/og/
           if git diff --cached --quiet; then
             echo "No new article today."
           else
