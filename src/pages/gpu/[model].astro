@@ -121,15 +121,15 @@ const relatedLinks = [
     <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">Specifications</h2>
     <div class="card" style="padding: 0; overflow: hidden;">
       <table><tbody>
-        <tr><td style="color:var(--text-muted);">VRAM</td><td>{gpu.vram_gb} GB</td></tr>
-        {gpu.memory_bandwidth_gbps && <tr><td style="color:var(--text-muted);">Memory Bandwidth</td><td>{gpu.memory_bandwidth_gbps} GB/s</td></tr>}
-        <tr><td style="color:var(--text-muted);">FP16 TFLOPS</td><td>{gpu.fp16_tflops}</td></tr>
-        {gpu.fp8_tflops && <tr><td style="color:var(--text-muted);">FP8 TFLOPS</td><td>{gpu.fp8_tflops}</td></tr>}
-        <tr><td style="color:var(--text-muted);">Architecture</td><td>{gpu.architecture}</td></tr>
-        <tr><td style="color:var(--text-muted);">Released</td><td>{gpu.released}</td></tr>
-        {gpu.tdp_watts && <tr><td style="color:var(--text-muted);">TDP</td><td>{gpu.tdp_watts}W</td></tr>}
-        {gpu.msrp_usd && <tr><td style="color:var(--text-muted);">MSRP</td><td>${gpu.msrp_usd.toLocaleString()}</td></tr>}
-        <tr><td style="color:var(--text-muted);">Good For</td><td>{gpu.good_for.join(', ')}</td></tr>
+        <tr><th scope="row" style="color:var(--text-muted);">VRAM</th><td>{gpu.vram_gb} GB</td></tr>
+        {gpu.memory_bandwidth_gbps && <tr><th scope="row" style="color:var(--text-muted);">Memory Bandwidth</th><td>{gpu.memory_bandwidth_gbps} GB/s</td></tr>}
+        <tr><th scope="row" style="color:var(--text-muted);">FP16 TFLOPS</th><td>{gpu.fp16_tflops}</td></tr>
+        {gpu.fp8_tflops && <tr><th scope="row" style="color:var(--text-muted);">FP8 TFLOPS</th><td>{gpu.fp8_tflops}</td></tr>}
+        <tr><th scope="row" style="color:var(--text-muted);">Architecture</th><td>{gpu.architecture}</td></tr>
+        <tr><th scope="row" style="color:var(--text-muted);">Released</th><td>{gpu.released}</td></tr>
+        {gpu.tdp_watts && <tr><th scope="row" style="color:var(--text-muted);">TDP</th><td>{gpu.tdp_watts}W</td></tr>}
+        {gpu.msrp_usd && <tr><th scope="row" style="color:var(--text-muted);">MSRP</th><td>${gpu.msrp_usd.toLocaleString()}</td></tr>}
+        <tr><th scope="row" style="color:var(--text-muted);">Good For</th><td>{gpu.good_for.join(', ')}</td></tr>
       </tbody></table>
     </div>
   </section>
