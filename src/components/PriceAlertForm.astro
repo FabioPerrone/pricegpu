@@ -1,0 +1,53 @@
+---
+interface Props {
+  gpuSlug: string;
+  gpuName: string;
+}
+
+const { gpuSlug, gpuName } = Astro.props;
+---
+
+<div class="card" style="margin: 2rem 0; padding: 1.5rem; border: 1px solid var(--border); border-radius: 6px;">
+  <h3 style="font-size: 1rem; margin-bottom: 1rem; font-weight: 600;">Get alerted when {gpuName} price drops</h3>
+  <form action="/api/alert" method="POST" style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end;">
+    <input type="hidden" name="gpu_slug" value={gpuSlug} />
+    <input type="hidden" name="gpu_name" value={gpuName} />
+
+    <div style="flex: 1; min-width: 200px;">
+      <label for={`email-${gpuSlug}`} style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.3rem;">Email</label>
+      <input
+        type="email"
+        id={`email-${gpuSlug}`}
+        name="email"
+        placeholder="you@example.com"
+        required
+        style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text); font-family: monospace; font-size: 0.9rem;"
+      />
+    </div>
+
+    <div style="flex: 1; min-width: 150px;">
+      <label for={`price-${gpuSlug}`} style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.3rem;">Alert if below $/hr</label>
+      <input
+        type="number"
+        id={`price-${gpuSlug}`}
+        name="price_threshold"
+        placeholder="e.g. 2.50"
+        step="0.01"
+        min="0"
+        required
+        style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text); font-family: monospace; font-size: 0.9rem;"
+      />
+    </div>
+
+    <button
+      type="submit"
+      class="btn-primary"
+      style="padding: 0.6rem 1.2rem; font-size: 0.9rem; flex-shrink: 0;"
+    >
+      Subscribe
+    </button>
+  </form>
+  <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.75rem;">
+    We'll email you when the {gpuName} price drops below your threshold. Unsubscribe anytime.
+  </p>
+</div>
