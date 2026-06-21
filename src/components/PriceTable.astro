@@ -1,7 +1,7 @@
 ---
 import type { PriceItem } from '../lib/pricing.ts';
 import { formatPrice } from '../lib/pricing.ts';
-import { buildAffiliateUrl } from '../lib/affiliate.ts';
+import { buildAffiliateUrl, AFFILIATE_DISCLAIMER } from '../lib/affiliate.ts';
 
 interface Props {
   prices: Array<PriceItem & { provider_slug: string; provider_name?: string }>;
@@ -17,6 +17,10 @@ const sorted = [...prices]
   .slice(0, limit);
 
 const cheapest = sorted[0];
+
+// Extract unique regions and availability for filters
+const regions = new Set(prices.map(p => p.region));
+const availabilities = new Set(prices.map(p => p.availability));
 ---
 
 {sorted.length === 0 ? (
@@ -37,22 +41,43 @@ const cheapest = sorted[0];
       </div>
     )}
 
-    <div class="card" style="padding: 0; overflow: hidden;">
-      <table>
+    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+      {AFFILIATE_DISCLAIMER} <a href="/disclosure" style="color: var(--text-muted);">Details</a>.
+    </p>
+
+    {(regions.size > 1 || availabilities.size > 1) && (
+      <div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; font-size: 0.85rem;">
+        {regions.size > 1 && (
+          <select id="filter-region" style="padding: 0.4rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text); font-family: monospace;">
+            <option value="">All regions</option>
+            {Array.from(regions).sort().map(r => <option value={r}>{r}</option>)}
+          </select>
+        )}
+        {availabilities.size > 1 && (
+          <select id="filter-availability" style="padding: 0.4rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text); font-family: monospace;">
+            <option value="">All availability</option>
+            {Array.from(availabilities).sort().map(a => <option value={a}>{a}</option>)}
+          </select>
+        )}
+      </div>
+    )}
+
+    <div class="card table-scroll" style="padding: 0;">
+      <table id="price-table">
         <thead>
           <tr>
-            <th>Provider</th>
-            <th>Configuration</th>
-            <th>Region</th>
-            <th>Billing</th>
-            <th>Availability</th>
-            <th style="text-align: right;">Price/hr</th>
-            <th></th>
+            <th scope="col">Provider</th>
+            <th scope="col">Configuration</th>
+            <th scope="col">Region</th>
+            <th scope="col">Billing</th>
+            <th scope="col">Availability</th>
+            <th scope="col" style="text-align: right;">Price/hr</th>
+            <th scope="col"></th>
           </tr>
         </thead>
         <tbody>
           {sorted.map((item, i) => (
-            <tr class={i === 0 ? 'best-price' : ''}>
+            <tr class={i === 0 ? 'best-price' : ''} data-region={item.region} data-availability={item.availability}>
               <td>
                 <strong>{item.provider_name || item.provider_slug}</strong>
                 {i === 0 && <span class="badge badge-green" style="margin-left: 0.5rem;">cheapest</span>}
@@ -86,5 +111,37 @@ const cheapest = sorted[0];
         </tbody>
       </table>
     </div>
+
+    {(regions.size > 1 || availabilities.size > 1) && (
+      <script is:inline>
+        document.addEventListener('DOMContentLoaded', () => {
+          const regionSelect = document.getElementById('filter-region');
+          const availabilitySelect = document.getElementById('filter-availability');
+          const table = document.getElementById('price-table');
+
+          if (!table) return;
+
+          const rows = table.querySelectorAll('tbody tr');
+
+          function applyFilters() {
+            const selectedRegion = regionSelect?.value || '';
+            const selectedAvailability = availabilitySelect?.value || '';
+
+            rows.forEach(row => {
+              const rowRegion = row.getAttribute('data-region');
+              const rowAvailability = row.getAttribute('data-availability');
+
+              const matchRegion = !selectedRegion || rowRegion === selectedRegion;
+              const matchAvailability = !selectedAvailability || rowAvailability === selectedAvailability;
+
+              row.style.display = matchRegion && matchAvailability ? '' : 'none';
+            });
+          }
+
+          regionSelect?.addEventListener('change', applyFilters);
+          availabilitySelect?.addEventListener('change', applyFilters);
+        });
+      </script>
+    )}
   </div>
 )}

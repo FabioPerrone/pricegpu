@@ -5,7 +5,7 @@ import path from 'path';
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const PRICES_DIR = 'data/prices';
 const BLOG_DIR = 'src/content/blog';
-const AUTHOR = 'Alex Torres';
+const AUTHOR = 'PriceGPU Data Bot';
 const OG_DIR = 'public/og';
 
 // ── OG image ──────────────────────────────────────────────────────────────────
@@ -200,7 +200,7 @@ const biggestRise = changes.filter(c => c.pct > 0)[0];
 
 // ── Groq call ─────────────────────────────────────────────────────────────────
 
-const systemPrompt = `You are Alex Torres, GPU market analyst at PriceGPU — a site that tracks real-time GPU cloud rental prices across 15 providers.
+const systemPrompt = `You are an automated content generator for PriceGPU — a site that tracks real-time GPU cloud rental prices across 15 providers. Articles are automatically generated from live pricing data and reviewed by the editorial team.
 
 Write news articles in the style of The Register or Ars Technica tech reporting: direct, technical, mildly opinionated, data-driven. Your readers are ML engineers who rent GPUs for training and inference work. They care about actual dollar figures, not vague trends.
 

@@ -3,6 +3,9 @@ import Layout from '../../layouts/Layout.astro';
 import PriceTable from '../../components/PriceTable.astro';
 import CTA from '../../components/CTA.astro';
 import RelatedPages from '../../components/RelatedPages.astro';
+import AdSlot from '../../components/AdSlot.astro';
+import PriceAlertForm from '../../components/PriceAlertForm.astro';
+import { getPriceChange, generateSparklineSVG } from '../../lib/history.ts';
 import {
   getGPUs, getProviders, getPricesForGPU, formatPrice,
   getCheapestForGPU, getRelatedGPUs, getLastScrapeDate,
@@ -26,6 +29,10 @@ const cheapest = getCheapestForGPU(gpu.slug);
 const cheapestProvider = cheapest ? providers.find((p) => p.slug === cheapest.provider_slug) : null;
 const relatedGPUs = getRelatedGPUs(gpu, 6);
 const scrapedAt = getLastScrapeDate(cheapest?.provider_slug ?? '');
+
+// Price history
+const priceChange = getPriceChange(gpu.slug, 30);
+const sparklineSVG = generateSparklineSVG(gpu.slug);
 
 const title = buildTitle([`${gpu.name} Cloud GPU Price`, 'PriceGPU']);
 const description = buildDescription(
@@ -85,22 +92,44 @@ const relatedLinks = [
     </div>
   )}
 
+  {sparklineSVG && (
+    <div style="margin-bottom: 2rem; padding: 1rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px;">
+      <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem;">
+        <div style="flex: 1;">
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.25rem;">30-day price trend</div>
+          <div style="font-size: 0.9rem; font-variant-numeric: tabular-nums;">
+            {priceChange.percentage > 0
+              ? <span style="color: #ff6666;">↑ {priceChange.percentage.toFixed(1)}% higher</span>
+              : priceChange.percentage < 0
+              ? <span style="color: #00D26A;">↓ {Math.abs(priceChange.percentage).toFixed(1)}% lower</span>
+              : <span style="color: var(--text-muted);">—stable</span>}
+          </div>
+        </div>
+      </div>
+      <div set:html={sparklineSVG} style="height: 40px;"></div>
+    </div>
+  )}
+
   <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">Live Pricing — {prices.length} offers</h2>
   <PriceTable {prices} gpuName={gpu.name} {scrapedAt} />
+
+  <PriceAlertForm gpuSlug={gpu.slug} gpuName={gpu.name} />
+
+  <AdSlot />
 
   <section style="margin-top: 2.5rem;">
     <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">Specifications</h2>
     <div class="card" style="padding: 0; overflow: hidden;">
       <table><tbody>
-        <tr><td style="color:var(--text-muted);">VRAM</td><td>{gpu.vram_gb} GB</td></tr>
-        {gpu.memory_bandwidth_gbps && <tr><td style="color:var(--text-muted);">Memory Bandwidth</td><td>{gpu.memory_bandwidth_gbps} GB/s</td></tr>}
-        <tr><td style="color:var(--text-muted);">FP16 TFLOPS</td><td>{gpu.fp16_tflops}</td></tr>
-        {gpu.fp8_tflops && <tr><td style="color:var(--text-muted);">FP8 TFLOPS</td><td>{gpu.fp8_tflops}</td></tr>}
-        <tr><td style="color:var(--text-muted);">Architecture</td><td>{gpu.architecture}</td></tr>
-        <tr><td style="color:var(--text-muted);">Released</td><td>{gpu.released}</td></tr>
-        {gpu.tdp_watts && <tr><td style="color:var(--text-muted);">TDP</td><td>{gpu.tdp_watts}W</td></tr>}
-        {gpu.msrp_usd && <tr><td style="color:var(--text-muted);">MSRP</td><td>${gpu.msrp_usd.toLocaleString()}</td></tr>}
-        <tr><td style="color:var(--text-muted);">Good For</td><td>{gpu.good_for.join(', ')}</td></tr>
+        <tr><th scope="row" style="color:var(--text-muted);">VRAM</th><td>{gpu.vram_gb} GB</td></tr>
+        {gpu.memory_bandwidth_gbps && <tr><th scope="row" style="color:var(--text-muted);">Memory Bandwidth</th><td>{gpu.memory_bandwidth_gbps} GB/s</td></tr>}
+        <tr><th scope="row" style="color:var(--text-muted);">FP16 TFLOPS</th><td>{gpu.fp16_tflops}</td></tr>
+        {gpu.fp8_tflops && <tr><th scope="row" style="color:var(--text-muted);">FP8 TFLOPS</th><td>{gpu.fp8_tflops}</td></tr>}
+        <tr><th scope="row" style="color:var(--text-muted);">Architecture</th><td>{gpu.architecture}</td></tr>
+        <tr><th scope="row" style="color:var(--text-muted);">Released</th><td>{gpu.released}</td></tr>
+        {gpu.tdp_watts && <tr><th scope="row" style="color:var(--text-muted);">TDP</th><td>{gpu.tdp_watts}W</td></tr>}
+        {gpu.msrp_usd && <tr><th scope="row" style="color:var(--text-muted);">MSRP</th><td>${gpu.msrp_usd.toLocaleString()}</td></tr>}
+        <tr><th scope="row" style="color:var(--text-muted);">Good For</th><td>{gpu.good_for.join(', ')}</td></tr>
       </tbody></table>
     </div>
   </section>

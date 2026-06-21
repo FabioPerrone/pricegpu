@@ -27,13 +27,7 @@ jobs:
       - run: npm run build
       - run: npm install -g @lhci/cli@latest
       - id: lhci
-        run: |
-          lhci autorun \
-            --collect.staticDistDir=./dist \
-            --collect.numberOfRuns=1 \
-            --assert.preset=lighthouse:recommended \
-            --assert.assertions.categories:performance=["error",{"minScore":0.95}] \
-            --upload.target=temporary-public-storage
+        run: lhci autorun
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true

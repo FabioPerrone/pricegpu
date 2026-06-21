@@ -1,0 +1,17 @@
+---
+// Renders a responsive AdSense ad unit.
+// Respects Consent Mode v2: ads only load after user grants ad_storage consent.
+// Usage: <AdSlot /> in any page/layout.
+---
+
+<div style="margin: 2rem 0; text-align: center;">
+  <ins
+    class="adsbygoogle"
+    style="display: inline-block; width: 100%; max-width: 728px; height: 90px; margin: 1rem 0;"
+    data-ad-client="ca-pub-1183159472799366"
+    data-ad-slot="0000000000"
+  ></ins>
+  <script is:inline>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+  </script>
+</div>

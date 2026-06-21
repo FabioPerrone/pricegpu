@@ -1,0 +1,91 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { buildTitle, buildDescription, buildCanonical, buildBreadcrumbs } from '../lib/seo.ts';
+
+const ownerEmail = import.meta.env.OWNER_EMAIL || 'contact@pricegpu.com';
+const title = buildTitle(['Privacy Policy', 'PriceGPU']);
+const description = buildDescription('PriceGPU privacy policy. How we collect, use, and protect your data.');
+const canonical = buildCanonical('/privacy');
+const schemas = [buildBreadcrumbs([{ name: 'Home', url: '/' }, { name: 'Privacy Policy', url: '/privacy' }])];
+---
+
+<Layout {title} {description} {canonical} {schemas}>
+  <nav class="breadcrumb"><a href="/">Home</a><span>/</span><span>Privacy Policy</span></nav>
+  <h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 1.5rem;">Privacy Policy</h1>
+  <div class="prose">
+    <p><strong>Last updated: June 2024</strong></p>
+
+    <h2>Data Controller</h2>
+    <p>PriceGPU operates from Spain and is the data controller for personal data collected through this site. For privacy inquiries, contact us at <code>{ownerEmail}</code>.</p>
+
+    <h2>What data we collect</h2>
+    <ul>
+      <li><strong>Cloudflare Web Analytics:</strong> cookieless analytics (page views, referrer, device type). No cookies or personal data.</li>
+      <li><strong>Google AdSense cookies:</strong> non-essential cookies for ad personalization (only if you accept cookies via our consent banner). Cookie name: <code>_gid</code>, <code>_ga</code>, and DoubleClick cookies.</li>
+      <li><strong>Affiliate click redirects:</strong> when you click "Rent" or "Try [Provider]", we log your click through a redirect URL (no PII stored, only aggregated counts).</li>
+      <li><strong>Web server logs:</strong> IP address, user-agent, request path, HTTP status (standard hosting logs; retained for 30 days).</li>
+      <li><strong>Price alert emails (optional):</strong> if you subscribe to price alerts, we store your email and price thresholds (see below).</li>
+    </ul>
+
+    <h2>Legal basis</h2>
+    <ul>
+      <li><strong>Consent (GDPR Art. 6.1a):</strong> for ad cookies and personalization — you grant this via the cookie consent banner.</li>
+      <li><strong>Legitimate interest (GDPR Art. 6.1f):</strong> for security, fraud prevention, and aggregate analytics (web hosting).</li>
+      <li><strong>Contract (GDPR Art. 6.1b):</strong> for price alert subscriptions — you subscribe to receive emails.</li>
+    </ul>
+
+    <h2>Who we share data with</h2>
+    <ul>
+      <li><strong>Google (AdSense):</strong> processes ad cookies for personalized ads. See <a href="https://policies.google.com/privacy" rel="external">Google's Privacy Policy</a>.</li>
+      <li><strong>Affiliate networks:</strong> we redirect to RunPod, Vast.ai, Lambda, and others via referral links; they receive click data per their privacy policies.</li>
+      <li><strong>Cloudflare:</strong> hosts the site and provides analytics. See <a href="https://www.cloudflare.com/privacypolicy/" rel="external">Cloudflare's Privacy Policy</a>.</li>
+      <li><strong>Email service provider:</strong> if you subscribe to price alerts, your email is stored with Buttondown, ConvertKit, or similar (double opt-in). Their privacy policies apply.</li>
+    </ul>
+
+    <h2>Your rights (GDPR)</h2>
+    <ul>
+      <li><strong>Access:</strong> request all data we hold about you.</li>
+      <li><strong>Rectification:</strong> correct inaccurate data.</li>
+      <li><strong>Erasure ("right to be forgotten"):</strong> request deletion of your data (e.g., email from alerts).</li>
+      <li><strong>Restrict processing:</strong> limit how we use your data.</li>
+      <li><strong>Withdraw consent:</strong> opt out of ad cookies at any time by clicking "Cookie Settings" in the footer.</li>
+      <li><strong>Complain:</strong> file a complaint with the Spanish data authority (AEPD: <a href="https://www.aepd.es" rel="external">aepd.es</a>).</li>
+    </ul>
+    <p>To exercise these rights, email <code>{ownerEmail}</code> with your request and proof of identity.</p>
+
+    <h2>Cookies and consent</h2>
+    <p>
+      We use a consent manager to present a banner on your first visit. You can:
+    </p>
+    <ul>
+      <li><strong>Accept All:</strong> enable ad personalization and analytics cookies.</li>
+      <li><strong>Reject All:</strong> disable non-essential cookies (equally prominent to "Accept All" per AEPD guidance).</li>
+      <li><strong>Cookie Settings:</strong> open the banner again anytime via the footer link to change your choices.</li>
+    </ul>
+    <p>Essential cookies (for site functionality and security) are never blocked.</p>
+
+    <h2>International transfers</h2>
+    <p>
+      Google processes data in the US under Standard Contractual Clauses (SCCs). The EU has not deemed the US as having adequate data protection, but SCCs provide a legal mechanism for such transfers. You consent to this by accepting ad cookies.
+    </p>
+
+    <h2>Data retention</h2>
+    <ul>
+      <li>Web server logs: 30 days.</li>
+      <li>Cloudflare Analytics: aggregated, no user-level retention.</li>
+      <li>Google AdSense cookies: as per Google's retention policy (typically ~2 years for analytics).</li>
+      <li>Price alert emails: retained until you unsubscribe or request deletion.</li>
+    </ul>
+
+    <h2>Children</h2>
+    <p>This site is not intended for users under 13 (or the digital age of majority in your country). We do not knowingly collect data from children. If you believe we have, contact us immediately.</p>
+
+    <h2>Privacy policy changes</h2>
+    <p>
+      We may update this policy. Changes are effective upon posting. Significant changes will be announced via a notice on the site.
+    </p>
+
+    <h2>Contact</h2>
+    <p>Email: <code>{ownerEmail}</code></p>
+  </div>
+</Layout>
