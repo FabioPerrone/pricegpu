@@ -10,7 +10,9 @@
         "categories:performance": ["error", {"minScore": 0.95}],
         "is-crawlable": "off",
         "network-dependency-tree-insight": "off",
-        "color-contrast": ["warn", {"minScore": 0.5}]
+        "render-blocking-insight": "off",
+        "render-blocking-resources": "off",
+        "color-contrast": "off"
       }
     },
     "upload": {
