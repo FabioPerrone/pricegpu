@@ -8,8 +8,8 @@
   --bg-card-hover: #1e1e1e;
   --border: #2a2a2a;
   --text: #e8e8e8;
-  --text-muted: #888;
-  --text-dim: #555;
+  --text-muted: #aaa;
+  --text-dim: #888;
 }
 
 html {
@@ -24,6 +24,18 @@ body { min-height: 100vh; background: var(--bg); }
 
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 
 .accent { color: var(--accent); }
 .muted { color: var(--text-muted); }
@@ -49,6 +61,11 @@ tr:hover td { background: var(--bg-card-hover); }
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 1.25rem;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  border-radius: 6px;
 }
 
 .btn-primary {
