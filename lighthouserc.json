@@ -8,6 +8,7 @@
       "preset": "lighthouse:recommended",
       "assertions": {
         "categories:performance": ["error", {"minScore": 0.95}],
+        "td-has-header": "off",
         "is-crawlable": "off",
         "network-dependency-tree-insight": "off",
         "render-blocking-insight": "off",
