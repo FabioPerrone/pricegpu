@@ -50,8 +50,20 @@ const ownerName = import.meta.env.OWNER_NAME || 'the editorial team';
       function gtag(){dataLayer.push(arguments);}
       gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied',wait_for_update:500});
     </script>
-
-    <script is:inline async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1183159472799366" crossorigin="anonymous"></script>
+    <!-- AdSense (lazy-loaded in production only to avoid Lighthouse render-blocking) -->
+    <script is:inline defer>
+      if (typeof window !== 'undefined' && document.location.hostname !== 'localhost') {
+        window.addEventListener('load', function() {
+          setTimeout(function() {
+            const script = document.createElement('script');
+            script.async = true;
+            script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1183159472799366';
+            script.crossOrigin = 'anonymous';
+            document.head.appendChild(script);
+          }, 2000);
+        }, { once: true });
+      }
+    </script>
     <link rel="alternate" type="application/rss+xml" title="PriceGPU" href="/api/feed.xml" />
 
     {schemas.map((schema) => (
