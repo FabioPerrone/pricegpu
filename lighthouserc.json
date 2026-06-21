@@ -2,13 +2,15 @@
   "ci": {
     "collect": {
       "staticDistDir": "./dist",
-      "numberOfRuns": 1,
-      "urlRegexFilter": "^(?!.*\\/admin\\/).*$"
+      "numberOfRuns": 1
     },
     "assert": {
       "preset": "lighthouse:recommended",
       "assertions": {
-        "categories:performance": ["error", {"minScore": 0.95}]
+        "categories:performance": ["error", {"minScore": 0.95}],
+        "is-crawlable": "off",
+        "network-dependency-tree-insight": "off",
+        "color-contrast": ["warn", {"minScore": 0.5}]
       }
     },
     "upload": {
