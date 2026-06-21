@@ -1,0 +1,91 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { buildTitle, buildDescription, buildCanonical, buildBreadcrumbs } from '../lib/seo.ts';
+
+const title = buildTitle(['Terms & Legal Disclaimer', 'PriceGPU']);
+const description = buildDescription('PriceGPU terms of use and legal disclaimer. Read before using this site.');
+const canonical = buildCanonical('/terms');
+const schemas = [buildBreadcrumbs([{ name: 'Home', url: '/' }, { name: 'Terms', url: '/terms' }])];
+---
+
+<Layout {title} {description} {canonical} {schemas}>
+  <nav class="breadcrumb"><a href="/">Home</a><span>/</span><span>Terms & Disclaimer</span></nav>
+  <h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 1.5rem;">Terms of Use & Legal Disclaimer</h1>
+  <div class="prose">
+    <p><strong>Last updated: June 2024</strong></p>
+
+    <h2>Disclaimer of Warranties</h2>
+    <p>
+      PriceGPU provides pricing data "as-is" for informational purposes only. All prices are compiled by automated scrapers at the time of collection and may be inaccurate, outdated, or incomplete. We do not warrant that the data is accurate, complete, or fit for any particular purpose.
+    </p>
+    <p>
+      <strong>Always verify prices directly on the provider's website before making a purchase or rental decision.</strong> Prices may have changed since our last update, and promotional offers or billing minimums may apply.
+    </p>
+
+    <h2>No Professional Advice</h2>
+    <p>
+      This site provides factual price comparisons and general information. It does not constitute professional advice, financial advice, or a recommendation to rent or purchase any GPU or service. Your decision to use any provider is your own responsibility.
+    </p>
+
+    <h2>Limitation of Liability</h2>
+    <p>
+      To the fullest extent permitted by law, PriceGPU and its operators shall not be liable for:
+    </p>
+    <ul>
+      <li>Decisions made based on the data provided on this site.</li>
+      <li>Financial loss, consequential damages, or indirect damages arising from your use of this site.</li>
+      <li>Errors, omissions, or inaccuracies in the pricing data or provider information.</li>
+      <li>Interruptions, service outages, or unavailability of the site.</li>
+      <li>Third-party actions (e.g., provider changes, data breaches at providers).</li>
+    </ul>
+    <p>
+      Our maximum liability is limited to the amount you directly paid to access this site (which is zero for free users).
+    </p>
+
+    <h2>Affiliate Relationships</h2>
+    <p>
+      PriceGPU earns referral commissions when you click "Rent" or "Try [Provider]" links. These relationships are disclosed in our <a href="/disclosure">Affiliate Disclosure</a>. Commissions do not affect our editorial integrity or price ordering (which is always by price, lowest first). See <a href="/disclosure">Disclosure</a> and <a href="/methodology">Methodology</a> for details.
+    </p>
+
+    <h2>Intellectual Property</h2>
+    <ul>
+      <li><strong>GPU specs, provider names, and trademarks:</strong> belong to their respective owners (NVIDIA, AMD, RunPod, Vast.ai, etc.). Our use is nominative and comparative, and does not imply endorsement or partnership.</li>
+      <li><strong>PriceGPU branding:</strong> is owned by PriceGPU.</li>
+      <li><strong>Price data:</strong> available under <a href="https://creativecommons.org/licenses/by/4.0/" rel="external">CC-BY-4.0</a>. Attribution required if you republish.</li>
+    </ul>
+
+    <h2>Prohibited Uses</h2>
+    <p>You agree not to:</p>
+    <ul>
+      <li>Use automated scrapers, bots, or other tools to extract data from this site (except for search-engine indexing and non-commercial personal use).</li>
+      <li>Republish pricing data without CC-BY-4.0 attribution.</li>
+      <li>Interfere with site availability or security.</li>
+      <li>Impersonate PriceGPU or misrepresent your affiliation with the site.</li>
+    </ul>
+
+    <h2>Third-Party Services</h2>
+    <p>
+      This site contains links to provider websites and other third-party services. We are not responsible for their content, practices, or policies. Your use of those sites is governed by their own terms and privacy policies.
+    </p>
+
+    <h2>Governing Law</h2>
+    <p>
+      These terms are governed by the laws of Spain. Any disputes shall be resolved in the Spanish courts or via alternative dispute resolution in accordance with Spanish law.
+    </p>
+
+    <h2>Severability</h2>
+    <p>
+      If any provision of these terms is found to be invalid or unenforceable, that provision shall be severed, and the remaining terms shall remain in effect.
+    </p>
+
+    <h2>Changes to Terms</h2>
+    <p>
+      We may update these terms at any time. Continued use of the site constitutes acceptance of updated terms. Significant changes will be announced on the site.
+    </p>
+
+    <h2>Contacts & Feedback</h2>
+    <p>
+      Have a question or concern? See our <a href="/about">About</a> page or <a href="/privacy">Privacy Policy</a>.
+    </p>
+  </div>
+</Layout>

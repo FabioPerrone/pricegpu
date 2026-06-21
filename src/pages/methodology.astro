@@ -16,10 +16,13 @@ const schemas = [buildBreadcrumbs([{ name: 'Home', url: '/' }, { name: 'Methodol
   <div class="prose">
     <h2>Data collection</h2>
     <p>Pricing is scraped weekly (Monday 03:00 UTC) using Playwright (headless Chromium). Each scraper navigates to the provider's pricing page, waits for content to render, extracts GPU model names and per-hour prices, maps names to canonical slugs, and validates output against a Zod schema.</p>
-    <h2>Rate limiting</h2>
-    <p>Scrapers throttle to 1 request per 2 seconds. User-Agent: <code>pricegpu.com/1.0 (+https://pricegpu.com/about)</code>.</p>
+    <h2>Rate limiting & robots.txt</h2>
+    <p>Scrapers throttle to 1 request per 2 seconds, and respect each provider's <code>robots.txt</code>. User-Agent: <code>pricegpu.com/1.0 (+https://pricegpu.com/about)</code>.</p>
     <h2>Data accuracy</h2>
     <p>Prices reflect publicly listed on-demand rates at scrape time. Actual billing may differ due to promotions, spot pricing, minimum billing periods, or prices changing between weekly scrapes. Every table shows "as of [date], verify on provider site".</p>
+    <h2>Data extraction & database rights</h2>
+    <p>We extract only <strong>factual pricing data</strong> (GPU model names and per-hour prices), not narrative content or page layout. Under EU database-right law (Directive 96/9/EC), facts themselves are not protected, and our extraction does not replicate the full structure/arrangement of a provider's database. This practice complies with fair use for comparative purposes.</p>
+
     <h2>Open data</h2>
     <p>Raw price dataset at <a href="/api/prices.json">/api/prices.json</a> under CC-BY-4.0. Scraper source code in the <a href="https://github.com/fabioperrone/pricegpu" rel="noopener">public GitHub repository</a>.</p>
     <h2>Providers tracked</h2>

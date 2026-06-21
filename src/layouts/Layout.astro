@@ -44,6 +44,13 @@ const ownerName = import.meta.env.OWNER_NAME || 'the editorial team';
     <link rel="icon" href="/favicon.ico" />
     <link rel="sitemap" href="/sitemap.xml" />
 
+    <!-- Google Consent Mode v2 -->
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied',wait_for_update:500});
+    </script>
+
     <script is:inline async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1183159472799366" crossorigin="anonymous"></script>
     <link rel="alternate" type="application/rss+xml" title="PriceGPU" href="/api/feed.xml" />
 
@@ -85,6 +92,8 @@ const ownerName = import.meta.env.OWNER_NAME || 'the editorial team';
             <a href="/about" style="color: var(--text-muted);">About</a>
             <a href="/methodology" style="color: var(--text-muted);">Methodology</a>
             <a href="/disclosure" style="color: var(--text-muted);">Disclosure</a>
+            <a href="/privacy" style="color: var(--text-muted);">Privacy</a>
+            <a href="/terms" style="color: var(--text-muted);">Terms</a>
             <a href="/status" style="color: var(--text-muted);">Status</a>
             <a href="/api/prices.json" style="color: var(--text-muted);">Public API</a>
           </div>

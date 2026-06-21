@@ -3,6 +3,7 @@ import Layout from '../../layouts/Layout.astro';
 import PriceTable from '../../components/PriceTable.astro';
 import CTA from '../../components/CTA.astro';
 import RelatedPages from '../../components/RelatedPages.astro';
+import AdSlot from '../../components/AdSlot.astro';
 import {
   getGPUs, getProviders, getPricesForGPU, formatPrice,
   getCheapestForGPU, getRelatedGPUs, getLastScrapeDate,
@@ -87,6 +88,8 @@ const relatedLinks = [
 
   <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">Live Pricing — {prices.length} offers</h2>
   <PriceTable {prices} gpuName={gpu.name} {scrapedAt} />
+
+  <AdSlot />
 
   <section style="margin-top: 2.5rem;">
     <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">Specifications</h2>

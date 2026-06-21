@@ -1,7 +1,7 @@
 ---
 import type { PriceItem } from '../lib/pricing.ts';
 import { formatPrice } from '../lib/pricing.ts';
-import { buildAffiliateUrl } from '../lib/affiliate.ts';
+import { buildAffiliateUrl, AFFILIATE_DISCLAIMER } from '../lib/affiliate.ts';
 
 interface Props {
   prices: Array<PriceItem & { provider_slug: string; provider_name?: string }>;
@@ -37,6 +37,9 @@ const cheapest = sorted[0];
       </div>
     )}
 
+    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+      {AFFILIATE_DISCLAIMER} <a href="/disclosure" style="color: var(--text-muted);">Details</a>.
+    </p>
     <div class="card" style="padding: 0; overflow: hidden;">
       <table>
         <thead>
