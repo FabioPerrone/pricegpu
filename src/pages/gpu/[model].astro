@@ -5,6 +5,7 @@ import CTA from '../../components/CTA.astro';
 import RelatedPages from '../../components/RelatedPages.astro';
 import AdSlot from '../../components/AdSlot.astro';
 import PriceAlertForm from '../../components/PriceAlertForm.astro';
+import { getPriceChange, generateSparklineSVG } from '../../lib/history.ts';
 import {
   getGPUs, getProviders, getPricesForGPU, formatPrice,
   getCheapestForGPU, getRelatedGPUs, getLastScrapeDate,
@@ -28,6 +29,10 @@ const cheapest = getCheapestForGPU(gpu.slug);
 const cheapestProvider = cheapest ? providers.find((p) => p.slug === cheapest.provider_slug) : null;
 const relatedGPUs = getRelatedGPUs(gpu, 6);
 const scrapedAt = getLastScrapeDate(cheapest?.provider_slug ?? '');
+
+// Price history
+const priceChange = getPriceChange(gpu.slug, 30);
+const sparklineSVG = generateSparklineSVG(gpu.slug);
 
 const title = buildTitle([`${gpu.name} Cloud GPU Price`, 'PriceGPU']);
 const description = buildDescription(
@@ -84,6 +89,24 @@ const relatedLinks = [
       <CTA providerSlug={cheapestProvider.slug} providerName={cheapestProvider.name}
         headline={`Cheapest ${gpu.name}: ${cheapestProvider.name} at ${formatPrice(cheapest!.price_usd_per_hour)}/hr`}
         note={`${cheapest!.availability} · ${cheapest!.region} · verify on provider site`} />
+    </div>
+  )}
+
+  {sparklineSVG && (
+    <div style="margin-bottom: 2rem; padding: 1rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px;">
+      <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem;">
+        <div style="flex: 1;">
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.25rem;">30-day price trend</div>
+          <div style="font-size: 0.9rem; font-variant-numeric: tabular-nums;">
+            {priceChange.percentage > 0
+              ? <span style="color: #ff6666;">↑ {priceChange.percentage.toFixed(1)}% higher</span>
+              : priceChange.percentage < 0
+              ? <span style="color: #00D26A;">↓ {Math.abs(priceChange.percentage).toFixed(1)}% lower</span>
+              : <span style="color: var(--text-muted);">—stable</span>}
+          </div>
+        </div>
+      </div>
+      <div set:html={sparklineSVG} style="height: 40px;"></div>
     </div>
   )}
 
