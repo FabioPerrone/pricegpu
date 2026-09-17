@@ -2,7 +2,8 @@
   "ci": {
     "collect": {
       "staticDistDir": "./dist",
-      "numberOfRuns": 1,
+      "_comment": "Three runs, asserted against the median. A single run on a shared CI runner swings 30 points under CPU contention — a byte-identical homepage scored 100 on one commit and 0.71 on the next, reporting 0 for DOM size on a 259-node page. One sample makes the gate a coin toss, and a gate people learn to re-run is not a gate.",
+      "numberOfRuns": 3,
       "url": [
         "http://localhost/index.html",
         "http://localhost/gpu/h100-sxm/index.html",
