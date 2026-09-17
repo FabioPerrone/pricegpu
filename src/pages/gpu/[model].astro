@@ -30,13 +30,30 @@ const cheapestProvider = cheapest ? providers.find((p) => p.slug === cheapest.pr
 const relatedGPUs = getRelatedGPUs(gpu, 6);
 const scrapedAt = getLastScrapeDate(cheapest?.provider_slug ?? '');
 
+/**
+ * Nine catalogue GPUs have no price anywhere — among them B200, RTX 5090 and
+ * MI300X, the parts people search for hardest. Their pages were being indexed
+ * with an empty table under a heading reading "0 offers": thin content that
+ * dilutes the site and sends a visitor straight back to the results page.
+ * Such a page is kept out of the index until it has prices, and offers the
+ * nearest GPUs we can actually quote instead of a dead end.
+ */
+const hasPrices = prices.length > 0;
+const pricedAlternatives = getRelatedGPUs(gpu, 12)
+  .map((g) => ({ gpu: g, cheapest: getCheapestForGPU(g.slug) }))
+  .filter((entry): entry is { gpu: typeof entry.gpu; cheapest: NonNullable<typeof entry.cheapest> } =>
+    entry.cheapest !== null)
+  .slice(0, 4);
+
 // Price history
 const priceChange = getPriceChange(gpu.slug, 30);
 const sparklineSVG = generateSparklineSVG(gpu.slug);
 
 const title = buildTitle([`${gpu.name} Cloud GPU Price`, 'PriceGPU']);
 const description = buildDescription(
-  `Compare ${gpu.name} rental prices across ${prices.length} providers. Cheapest from ${cheapest ? formatPrice(cheapest.price_usd_per_hour) : 'N/A'}/hr. ${gpu.vram_gb}GB VRAM, ${gpu.fp16_tflops} TFLOPS FP16.`
+  hasPrices
+    ? `Compare ${gpu.name} rental prices across ${prices.length} providers. Cheapest from ${formatPrice(cheapest!.price_usd_per_hour)}. ${gpu.vram_gb}GB VRAM, ${gpu.fp16_tflops} TFLOPS FP16.`
+    : `${gpu.name} specifications and cloud availability. ${gpu.vram_gb}GB VRAM, ${gpu.fp16_tflops} TFLOPS FP16, ${gpu.architecture}. No tracked provider is renting it yet.`
 );
 const canonical = buildCanonical(`/gpu/${gpu.slug}`);
 
@@ -73,7 +90,7 @@ const relatedLinks = [
 ];
 ---
 
-<Layout {title} {description} {canonical} {schemas} gpu={gpu.slug}>
+<Layout {title} {description} {canonical} {schemas} gpu={gpu.slug} noindex={!hasPrices}>
   <nav class="breadcrumb">
     <a href="/">Home</a><span>/</span><a href="/gpu">GPUs</a><span>/</span><span>{gpu.name}</span>
   </nav>
@@ -110,10 +127,59 @@ const relatedLinks = [
     </div>
   )}
 
-  <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">Live Pricing — {prices.length} offers</h2>
-  <PriceTable {prices} gpuName={gpu.name} {scrapedAt} />
+  {hasPrices ? (
+    <>
+      <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">Live Pricing — {prices.length} offers</h2>
+      <PriceTable {prices} gpuName={gpu.name} {scrapedAt} />
+    </>
+  ) : (
+    <>
+      <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">Not yet available to rent</h2>
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <p style="margin: 0 0 0.5rem;">
+          None of the {providers.length} providers we track is renting the {gpu.name} yet.
+          We check every day and this page fills in as soon as one does.
+        </p>
+        <p style="margin: 0; font-size: 0.9rem; color: var(--text-muted);">
+          Specifications below are from the manufacturer, not from a live offer.
+        </p>
+      </div>
 
-  <PriceAlertForm gpuSlug={gpu.slug} gpuName={gpu.name} />
+      {pricedAlternatives.length > 0 && (
+        <section style="margin-bottom: 2rem;">
+          <h3 style="font-size: 1rem; margin-bottom: 0.75rem;">Closest GPUs you can rent today</h3>
+          <div class="card table-scroll" style="padding: 0;">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">GPU</th>
+                  <th scope="col" style="text-align: right;">Cheapest</th>
+                  <th scope="col">VRAM</th>
+                  <th scope="col">FP16</th>
+                  <th scope="col" class="col-action"><span class="sr-only">Details</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {pricedAlternatives.map(({ gpu: alt, cheapest: altCheapest }) => (
+                  <tr>
+                    <td><a href={`/gpu/${alt.slug}`} style="font-weight: 600;">{alt.name}</a></td>
+                    <td style="text-align: right;"><strong class="accent">{formatPrice(altCheapest.price_usd_per_hour)}</strong></td>
+                    <td style="color: var(--text-muted);">{alt.vram_gb} GB</td>
+                    <td style="color: var(--text-muted);">{alt.fp16_tflops}</td>
+                    <td class="col-action">
+                      <a href={`/gpu/${alt.slug}`} style="font-size: 0.8rem; color: var(--text-muted);">all prices →</a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+    </>
+  )}
+
+  <PriceAlertForm gpuSlug={gpu.slug} gpuName={gpu.name} mode={hasPrices ? 'drop' : 'availability'} />
 
   <AdSlot />
 
