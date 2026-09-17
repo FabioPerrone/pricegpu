@@ -170,7 +170,12 @@ export function getPricesForGPUAndProvider(
 ): PriceItem[] {
   const data = getProviderPrices(providerSlug);
   if (!data) return [];
-  return data.items.filter((item) => item.gpu_slug === gpuSlug);
+  // Normalized on the way out, like getAllPrices — otherwise a scraper
+  // emitting an old slug would keep working through one accessor and
+  // silently return nothing through the other.
+  return data.items
+    .map((item) => ({ ...item, gpu_slug: resolveGpuSlug(item.gpu_slug) }))
+    .filter((item) => item.gpu_slug === gpuSlug);
 }
 
 export function getRelatedGPUs(gpu: GPU, limit = 4): GPU[] {
