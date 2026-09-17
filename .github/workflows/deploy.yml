@@ -38,15 +38,26 @@ jobs:
       # against production rather than trusting that it held.
       - name: Smoke-test the affiliate redirect
         run: |
-          sleep 25
+          # GET, not HEAD: assert what a visitor actually gets. onRequestGet
+          # does not answer HEAD, so a HEAD check tests the wrong contract.
+          check() {
+            curl -s -o /dev/null --max-redirs 0 --max-time 20 \
+                 -w '%{http_code} %{redirect_url}' "https://pricegpu.com/go/$1"
+          }
+
+          # A new deployment takes a little while to reach the custom domain,
+          # and a fixed sleep either flakes or wastes time. Poll instead, so
+          # a failure here means the redirect is broken rather than slow.
+          for attempt in 1 2 3 4 5 6; do
+            read -r status location < <(check runpod)
+            [ "$status" = "302" ] && [ -n "$location" ] && break
+            echo "attempt $attempt: /go/runpod -> ${status:-000}, waiting for the deployment to go live"
+            sleep 10
+          done
+
           failed=0
           for slug in runpod vast-ai lambda-labs; do
-            url="https://pricegpu.com/go/$slug"
-            # GET, not HEAD: this must assert what a visitor actually gets.
-            read -r status location < <(
-              curl -s -o /dev/null --max-redirs 0 --max-time 20 \
-                   -w '%{http_code} %{redirect_url}' "$url"
-            )
+            read -r status location < <(check "$slug")
             echo "GET /go/$slug -> ${status:-000} -> ${location:-<none>}"
             if [ "$status" != "302" ] || [ -z "$location" ]; then
               failed=1
@@ -60,8 +71,8 @@ jobs:
             exit 1
           fi
 
-          # A visitor page must still be a page — catches a routes file that
-          # swallowed the static assets along with fixing the functions.
+          # A visitor page must still be a page — catches a routing change
+          # that fixes the functions by swallowing the static site.
           home=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 https://pricegpu.com/)
           echo "GET / -> $home"
           [ "$home" = "200" ] || { echo "::error::Homepage returned $home."; exit 1; }
