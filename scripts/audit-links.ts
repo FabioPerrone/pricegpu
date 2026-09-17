@@ -21,10 +21,31 @@ function walk(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-/** Map a site-absolute href to the file that would serve it. */
+/**
+ * Paths served by a Pages Function rather than a file on disk. Without this
+ * the audit would report every affiliate redirect as broken.
+ */
+const functionRoutes: string[] = (() => {
+  const routesFile = join(DIST, '_routes.json');
+  if (!existsSync(routesFile)) return [];
+  try {
+    return JSON.parse(readFileSync(routesFile, 'utf8')).include ?? [];
+  } catch {
+    return [];
+  }
+})();
+
+function servedByFunction(path: string): boolean {
+  return functionRoutes.some((route) =>
+    route.endsWith('/*') ? path.startsWith(route.slice(0, -1)) : path === route
+  );
+}
+
+/** Map a site-absolute href to the file or function that would serve it. */
 function resolves(href: string): boolean {
   const clean = href.split('#')[0].split('?')[0];
   if (!clean || clean === '/') return true;
+  if (servedByFunction(clean)) return true;
   const base = join(DIST, clean);
   return existsSync(base) || existsSync(base + '.html') || existsSync(join(base, 'index.html'));
 }

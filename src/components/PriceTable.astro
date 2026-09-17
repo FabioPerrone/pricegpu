@@ -97,7 +97,12 @@ const availabilities = new Set(prices.map(p => p.availability));
               </td>
               <td style="text-align: right;">
                 <a
-                  href={buildAffiliateUrl(item.provider_slug)}
+                  href={buildAffiliateUrl(item.provider_slug, {
+                    from: Astro.url.pathname,
+                    gpu: item.gpu_slug,
+                    position: i + 1,
+                    price: item.price_usd_per_hour,
+                  })}
                   rel="sponsored noopener"
                   target="_blank"
                   class="btn-primary"

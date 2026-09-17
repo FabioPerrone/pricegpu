@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import Analytics from '../components/Analytics.astro';
 import { AFFILIATE_DISCLAIMER } from '../lib/affiliate.ts';
 
 interface Props {
@@ -10,9 +11,11 @@ interface Props {
   noindex?: boolean;
   ogType?: string;
   ogImage?: string;
+  /** GPU slug when the page is about one GPU — recorded with the pageview. */
+  gpu?: string;
 }
 
-const { title, description, canonical, schemas = [], noindex = false, ogType = 'website', ogImage } = Astro.props;
+const { title, description, canonical, schemas = [], noindex = false, ogType = 'website', ogImage, gpu } = Astro.props;
 const ownerName = import.meta.env.OWNER_NAME || 'the editorial team';
 ---
 
@@ -71,6 +74,8 @@ const ownerName = import.meta.env.OWNER_NAME || 'the editorial team';
     {schemas.map((schema) => (
       <script type="application/ld+json" set:html={JSON.stringify(schema)} />
     ))}
+
+    <Analytics {gpu} />
   </head>
 
   <body>

@@ -28,10 +28,6 @@ const providers = JSON.parse(
 ) as Provider[];
 const providerSlugs = new Set(providers.map((p) => p.slug));
 
-const goPageSource = fs.readFileSync(path.join(process.cwd(), 'src/pages/go/[partner].astro'), 'utf-8');
-const envRefsBlock = goPageSource.match(/const ENV_REFS: Record<string, string> = \{([\s\S]*?)\};/)?.[1] ?? '';
-const definedEnvs = new Set([...envRefsBlock.matchAll(/(\w+):/g)].map((m) => m[1]));
-
 const pricingSource = fs.readFileSync(path.join(process.cwd(), 'src/lib/pricing.ts'), 'utf-8');
 const aliasBlock = pricingSource.match(/const PRICE_FILE_TO_PROVIDER: Record<string, string> = \{([\s\S]*?)\};/)?.[1] ?? '';
 const aliases = Object.fromEntries(
@@ -65,15 +61,26 @@ for (const file of priceFiles) {
   }
 }
 
-for (const provider of providers) {
-  // 2. Declared env var is actually readable by the redirect.
-  if (provider.affiliate_param_env && !definedEnvs.has(provider.affiliate_param_env)) {
-    errors.push(
-      `${provider.slug}: affiliate_param_env "${provider.affiliate_param_env}" is missing from ` +
-        `ENV_REFS in src/pages/go/[partner].astro, so the redirect drops the ref code.`
-    );
+// 2. The redirect's generated provider map still matches providers.json.
+const generatedPath = path.join(process.cwd(), 'functions/_generated/providers.ts');
+if (!fs.existsSync(generatedPath)) {
+  errors.push('functions/_generated/providers.ts is missing. Run: npx tsx scripts/generate-functions-data.ts');
+} else {
+  const generated = fs.readFileSync(generatedPath, 'utf-8');
+  const generatedSlugs = new Set(
+    [...generated.matchAll(/^\s{2}"([a-z0-9-]+)": \{/gm)].map((m) => m[1])
+  );
+  for (const provider of providers) {
+    if (!generatedSlugs.has(provider.slug)) {
+      errors.push(
+        `${provider.slug} is missing from functions/_generated/providers.ts, so /go/${provider.slug} ` +
+          `would redirect to /404. Regenerate with: npx tsx scripts/generate-functions-data.ts`
+      );
+    }
   }
+}
 
+for (const provider of providers) {
   // 3. Live prices but nothing to earn from them. Known-no-program providers
   //    warn instead of failing, so a newly added provider is still caught.
   if (providersWithPrices.has(provider.slug) && !provider.affiliate_param_env) {
