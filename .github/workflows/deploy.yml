@@ -38,11 +38,30 @@ jobs:
       # against production rather than trusting that it held.
       - name: Smoke-test the affiliate redirect
         run: |
-          sleep 20
-          status=$(curl -s -o /dev/null -w '%{http_code}' -I https://pricegpu.com/go/runpod)
-          location=$(curl -s -o /dev/null -w '%{redirect_url}' -I https://pricegpu.com/go/runpod)
-          echo "GET /go/runpod -> $status -> ${location:-<none>}"
-          if [ "$status" != "302" ] || [ -z "$location" ]; then
-            echo "::error::/go/runpod did not redirect (status $status). Every affiliate link on the site is broken."
+          sleep 25
+          failed=0
+          for slug in runpod vast-ai lambda-labs; do
+            url="https://pricegpu.com/go/$slug"
+            # GET, not HEAD: this must assert what a visitor actually gets.
+            read -r status location < <(
+              curl -s -o /dev/null --max-redirs 0 --max-time 20 \
+                   -w '%{http_code} %{redirect_url}' "$url"
+            )
+            echo "GET /go/$slug -> ${status:-000} -> ${location:-<none>}"
+            if [ "$status" != "302" ] || [ -z "$location" ]; then
+              failed=1
+            fi
+          done
+
+          if [ "$failed" = "1" ]; then
+            echo "--- response headers for /go/runpod ---"
+            curl -s -D - -o /dev/null --max-redirs 0 --max-time 20 https://pricegpu.com/go/runpod || true
+            echo "::error::Affiliate redirects are not returning 302. Every Rent link on the site is broken."
             exit 1
           fi
+
+          # A visitor page must still be a page — catches a routes file that
+          # swallowed the static assets along with fixing the functions.
+          home=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 https://pricegpu.com/)
+          echo "GET / -> $home"
+          [ "$home" = "200" ] || { echo "::error::Homepage returned $home."; exit 1; }
