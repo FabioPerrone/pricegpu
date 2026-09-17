@@ -73,7 +73,7 @@ const faqs = [
   {
     q: `Which is cheaper to rent, ${gpuA.name} or ${gpuB.name}?`,
     a: cheapestA && cheapestB
-      ? `${cheaperGPU?.name} rents cheaper. ${gpuA.name}: from ${formatPrice(cheapestA.price_usd_per_hour)}/hr; ${gpuB.name}: from ${formatPrice(cheapestB.price_usd_per_hour)}/hr.`
+      ? `${cheaperGPU?.name} rents cheaper. ${gpuA.name}: from ${formatPrice(cheapestA.price_usd_per_hour)}; ${gpuB.name}: from ${formatPrice(cheapestB.price_usd_per_hour)}.`
       : 'See the pricing tables below.',
   },
   {
@@ -121,7 +121,7 @@ const cheapestAProvider = cheapestA ? providers.find((p) => p.slug === cheapestA
       <CTA
         providerSlug={cheapestAProvider.slug}
         providerName={cheapestAProvider.name}
-        headline={`Rent ${gpuA.name} from ${formatPrice(cheapestA.price_usd_per_hour)}/hr`}
+        headline={`Rent ${gpuA.name} from ${formatPrice(cheapestA.price_usd_per_hour)}`}
         note={`${cheapestA.availability} · ${cheapestA.region}`}
       />
     </div>

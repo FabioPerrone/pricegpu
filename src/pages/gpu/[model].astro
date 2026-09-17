@@ -80,14 +80,14 @@ const relatedLinks = [
 
   <div style="display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
     <h1 style="font-size: 1.75rem; font-weight: 700;">{gpu.name} Cloud GPU Pricing</h1>
-    {cheapest && <span style="font-size: 1.1rem; color: var(--text-muted);">from <strong class="accent">{formatPrice(cheapest.price_usd_per_hour)}</strong>/hr</span>}
+    {cheapest && <span style="font-size: 1.1rem; color: var(--text-muted);">from <strong class="accent">{formatPrice(cheapest.price_usd_per_hour)}</strong></span>}
   </div>
   <p style="color: var(--text-muted); margin-bottom: 1.5rem;">{gpu.vram_gb}GB VRAM · {gpu.fp16_tflops} TFLOPS FP16 · {gpu.architecture} · Released {gpu.released}</p>
 
   {cheapestProvider && (
     <div style="margin-bottom: 1.5rem;">
       <CTA providerSlug={cheapestProvider.slug} providerName={cheapestProvider.name}
-        headline={`Cheapest ${gpu.name}: ${cheapestProvider.name} at ${formatPrice(cheapest!.price_usd_per_hour)}/hr`}
+        headline={`Cheapest ${gpu.name}: ${cheapestProvider.name} at ${formatPrice(cheapest!.price_usd_per_hour)}`}
         note={`${cheapest!.availability} · ${cheapest!.region} · verify on provider site`} />
     </div>
   )}

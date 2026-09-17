@@ -38,7 +38,7 @@ const faqs = [
   {
     q: `Is there a cheaper alternative to ${provider.name}?`,
     a: cheapestItem
-      ? `${provider.name}'s entry price is ${formatPrice(cheapestItem.price_usd_per_hour)}/hr. Compare with ${related[0]?.name ?? 'other providers'} to find lower prices for your GPU model.`
+      ? `${provider.name}'s entry price is ${formatPrice(cheapestItem.price_usd_per_hour)}. Compare with ${related[0]?.name ?? 'other providers'} to find lower prices for your GPU model.`
       : `Compare providers on the PriceGPU tables to find cheaper options.`,
   },
   {
@@ -93,7 +93,7 @@ const relatedLinks = [
               <a href={`/provider/${alt.slug}`} style="font-weight: 600; font-size: 1rem;">{alt.name}</a>
               {altCheapest && (
                 <span style="color: var(--text-muted); font-size: 0.85rem;">
-                  from <strong class="accent">{formatPrice(altCheapest.price_usd_per_hour)}</strong>/hr
+                  from <strong class="accent">{formatPrice(altCheapest.price_usd_per_hour)}</strong>
                 </span>
               )}
             </div>

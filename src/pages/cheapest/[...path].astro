@@ -28,12 +28,12 @@ const cheapestProvider = cheapest ? providers.find((p) => p.slug === cheapest.pr
 const scrapedAt = getLastScrapeDate(cheapest?.provider_slug ?? '');
 
 const title = buildTitle([`Cheapest ${gpu.name} for ${useCase.name}`, 'PriceGPU']);
-const description = buildDescription(`Find the cheapest ${gpu.name} for ${useCase.name}. ${gpu.vram_gb}GB VRAM meets the ${useCase.min_vram_gb}GB minimum. ${cheapest ? `From ${formatPrice(cheapest.price_usd_per_hour)}/hr on ${cheapestProvider?.name}.` : ''}`);
+const description = buildDescription(`Find the cheapest ${gpu.name} for ${useCase.name}. ${gpu.vram_gb}GB VRAM meets the ${useCase.min_vram_gb}GB minimum. ${cheapest ? `From ${formatPrice(cheapest.price_usd_per_hour)} on ${cheapestProvider?.name}.` : ''}`);
 const canonical = buildCanonical(`/cheapest/${gpu.slug}-for-${useCase.slug}`);
 
 const faqs = [
   { q: `Is the ${gpu.name} good for ${useCase.name}?`, a: `Yes. ${useCase.name} requires ${useCase.min_vram_gb}GB VRAM; the ${gpu.name} has ${gpu.vram_gb}GB.` },
-  { q: `What is the cheapest ${gpu.name} for ${useCase.name}?`, a: cheapest && cheapestProvider ? `${cheapestProvider.name} at ${formatPrice(cheapest.price_usd_per_hour)}/hr (${cheapest.availability}, ${cheapest.region}).` : 'Pricing data is being refreshed.' },
+  { q: `What is the cheapest ${gpu.name} for ${useCase.name}?`, a: cheapest && cheapestProvider ? `${cheapestProvider.name} at ${formatPrice(cheapest.price_usd_per_hour)} (${cheapest.availability}, ${cheapest.region}).` : 'Pricing data is being refreshed.' },
 ];
 
 const schemas = [
@@ -56,7 +56,7 @@ const relatedLinks = [
   {cheapestProvider && (
     <div style="margin-bottom: 1.5rem;">
       <CTA providerSlug={cheapestProvider.slug} providerName={cheapestProvider.name}
-        headline={`Best price: ${formatPrice(cheapest!.price_usd_per_hour)}/hr on ${cheapestProvider.name}`}
+        headline={`Best price: ${formatPrice(cheapest!.price_usd_per_hour)} on ${cheapestProvider.name}`}
         note={`${cheapest!.availability} · ${cheapest!.region} · verify before purchasing`} />
     </div>
   )}

@@ -52,7 +52,7 @@ const scrapedAt = getLastScrapeDate(providerA.slug);
 
 const title = buildTitle([`${providerA.name} vs ${providerB.name}`, 'GPU Cloud Comparison', 'PriceGPU']);
 const description = buildDescription(
-  `${providerA.name} vs ${providerB.name}: side-by-side GPU pricing, features, and regions. ${cheaperProvider ? `${cheaperProvider.name} offers lower entry pricing.` : ''} Updated weekly.`
+  `${providerA.name} vs ${providerB.name}: side-by-side GPU pricing, features, and regions. ${cheaperProvider ? `${cheaperProvider.name} offers lower entry pricing.` : ''} Updated daily.`
 );
 const canonical = buildCanonical(comparePath(providerA.slug, providerB.slug));
 
@@ -60,7 +60,7 @@ const faqs = [
   {
     q: `Which is cheaper, ${providerA.name} or ${providerB.name}?`,
     a: cheapestA && cheapestB
-      ? `${providerA.name}'s lowest price is ${formatPrice(cheapestA.price_usd_per_hour)}/hr; ${providerB.name}'s is ${formatPrice(cheapestB.price_usd_per_hour)}/hr. ${cheaperProvider?.name} has the lower entry price, but the cheapest option depends on your specific GPU model and region.`
+      ? `${providerA.name}'s lowest price is ${formatPrice(cheapestA.price_usd_per_hour)}; ${providerB.name}'s is ${formatPrice(cheapestB.price_usd_per_hour)}. ${cheaperProvider?.name} has the lower entry price, but the cheapest option depends on your specific GPU model and region.`
       : 'Pricing data is being updated. Check back after the next scrape.',
   },
   {

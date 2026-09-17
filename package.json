@@ -15,7 +15,7 @@
     "ping-indexnow": "tsx scripts/ping-indexnow.ts",
     "syndicate": "tsx scripts/syndicate.ts",
     "audit": "tsx scripts/audit-indexation.ts",
-    "prebuild": "tsx scripts/generate-functions-data.ts",
+    "prebuild": "tsx scripts/generate-functions-data.ts && tsx scripts/health.ts",
     "audit:links": "tsx scripts/audit-links.ts",
     "audit:affiliates": "tsx scripts/audit-affiliates.ts",
     "health": "tsx scripts/health.ts",

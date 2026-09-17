@@ -48,13 +48,13 @@ const availabilities = new Set(prices.map(p => p.availability));
     {(regions.size > 1 || availabilities.size > 1) && (
       <div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; font-size: 0.85rem;">
         {regions.size > 1 && (
-          <select id="filter-region" style="padding: 0.4rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text); font-family: monospace;">
+          <select id="filter-region" aria-label="Filter by region" style="padding: 0.4rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text); font-family: monospace;">
             <option value="">All regions</option>
             {Array.from(regions).sort().map(r => <option value={r}>{r}</option>)}
           </select>
         )}
         {availabilities.size > 1 && (
-          <select id="filter-availability" style="padding: 0.4rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text); font-family: monospace;">
+          <select id="filter-availability" aria-label="Filter by availability" style="padding: 0.4rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text); font-family: monospace;">
             <option value="">All availability</option>
             {Array.from(availabilities).sort().map(a => <option value={a}>{a}</option>)}
           </select>
@@ -67,12 +67,12 @@ const availabilities = new Set(prices.map(p => p.availability));
         <thead>
           <tr>
             <th scope="col">Provider</th>
+            <th scope="col" style="text-align: right;">Price/hr</th>
             <th scope="col">Configuration</th>
             <th scope="col">Region</th>
             <th scope="col">Billing</th>
             <th scope="col">Availability</th>
-            <th scope="col" style="text-align: right;">Price/hr</th>
-            <th scope="col"></th>
+            <th scope="col" class="col-action"><span class="sr-only">Rent</span></th>
           </tr>
         </thead>
         <tbody>
@@ -81,6 +81,9 @@ const availabilities = new Set(prices.map(p => p.availability));
               <td>
                 <strong>{item.provider_name || item.provider_slug}</strong>
                 {i === 0 && <span class="badge badge-green" style="margin-left: 0.5rem;">cheapest</span>}
+              </td>
+              <td style="text-align: right; font-weight: 600;">
+                {formatPrice(item.price_usd_per_hour)}
               </td>
               <td style="color: var(--text-muted);">{item.configuration}</td>
               <td style="color: var(--text-muted);">{item.region}</td>
@@ -92,10 +95,7 @@ const availabilities = new Set(prices.map(p => p.availability));
                   {item.availability}
                 </span>
               </td>
-              <td style="text-align: right; font-weight: 600; font-variant-numeric: tabular-nums;">
-                {formatPrice(item.price_usd_per_hour)}
-              </td>
-              <td style="text-align: right;">
+              <td class="col-action">
                 <a
                   href={buildAffiliateUrl(item.provider_slug, {
                     from: Astro.url.pathname,
