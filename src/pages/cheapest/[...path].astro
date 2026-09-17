@@ -48,7 +48,7 @@ const relatedLinks = [
 ];
 ---
 
-<Layout {title} {description} {canonical} {schemas}>
+<Layout {title} {description} {canonical} {schemas} gpu={gpu.slug} noindex={!cheapest}>
   <nav class="breadcrumb"><a href="/">Home</a><span>/</span><a href="/cheapest">Cheapest</a><span>/</span><span>{gpu.name} for {useCase.name}</span></nav>
   <h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem;">Cheapest {gpu.name} for {useCase.name}</h1>
   <p style="color: var(--text-muted); margin-bottom: 1.5rem;">{gpu.vram_gb}GB VRAM · {gpu.fp16_tflops} TFLOPS FP16 · {useCase.min_vram_gb}GB min for {useCase.name}</p>
