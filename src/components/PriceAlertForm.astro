@@ -1,53 +1,97 @@
 ---
+/**
+ * Price alert capture.
+ *
+ * Two modes, because the ask differs. On a GPU with live prices the useful
+ * question is "tell me when it drops below X". On one nobody rents yet, a
+ * price threshold is a question the visitor cannot answer — there is no price
+ * to anchor to — so it asks only for an address and promises availability.
+ *
+ * Submits over fetch and reports inline. The bare form previously navigated
+ * to the endpoint's JSON response, leaving the visitor looking at raw JSON.
+ */
 interface Props {
   gpuSlug: string;
   gpuName: string;
+  /** 'drop' asks for a threshold; 'availability' waits for a first price. */
+  mode?: 'drop' | 'availability';
 }
 
-const { gpuSlug, gpuName } = Astro.props;
+const { gpuSlug, gpuName, mode = 'drop' } = Astro.props;
+const wantsThreshold = mode === 'drop';
+const formId = `alert-${gpuSlug}`;
+const inputStyle =
+  'width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text); font-family: var(--font-mono); font-size: 0.9rem;';
 ---
 
-<div class="card" style="margin: 2rem 0; padding: 1.5rem; border: 1px solid var(--border); border-radius: 6px;">
-  <h3 style="font-size: 1rem; margin-bottom: 1rem; font-weight: 600;">Get alerted when {gpuName} price drops</h3>
-  <form action="/api/alert" method="POST" style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end;">
+<div class="card" style="margin: 2rem 0; padding: 1.5rem;">
+  <h3 style="font-size: 1rem; margin-bottom: 1rem; font-weight: 600;">
+    {wantsThreshold ? `Get alerted when ${gpuName} drops below your price` : `Get alerted when the ${gpuName} becomes available`}
+  </h3>
+
+  <form id={formId} action="/api/alert" method="POST" style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end;">
     <input type="hidden" name="gpu_slug" value={gpuSlug} />
     <input type="hidden" name="gpu_name" value={gpuName} />
+    {!wantsThreshold && <input type="hidden" name="price_threshold" value="0" />}
 
-    <div style="flex: 1; min-width: 200px;">
+    <div style="flex: 2; min-width: 200px;">
       <label for={`email-${gpuSlug}`} style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.3rem;">Email</label>
-      <input
-        type="email"
-        id={`email-${gpuSlug}`}
-        name="email"
-        placeholder="you@example.com"
-        required
-        style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text); font-family: monospace; font-size: 0.9rem;"
-      />
+      <input type="email" id={`email-${gpuSlug}`} name="email" placeholder="you@example.com" required style={inputStyle} />
     </div>
 
-    <div style="flex: 1; min-width: 150px;">
-      <label for={`price-${gpuSlug}`} style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.3rem;">Alert if below $/hr</label>
-      <input
-        type="number"
-        id={`price-${gpuSlug}`}
-        name="price_threshold"
-        placeholder="e.g. 2.50"
-        step="0.01"
-        min="0"
-        required
-        style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text); font-family: monospace; font-size: 0.9rem;"
-      />
-    </div>
+    {wantsThreshold && (
+      <div style="flex: 1; min-width: 150px;">
+        <label for={`price-${gpuSlug}`} style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.3rem;">Alert below $/hr</label>
+        <input type="number" id={`price-${gpuSlug}`} name="price_threshold" placeholder="e.g. 2.50" step="0.01" min="0" required style={inputStyle} />
+      </div>
+    )}
 
-    <button
-      type="submit"
-      class="btn-primary"
-      style="padding: 0.6rem 1.2rem; font-size: 0.9rem; flex-shrink: 0;"
-    >
-      Subscribe
+    <button type="submit" class="btn-primary" style="padding: 0.6rem 1.2rem; font-size: 0.9rem; flex-shrink: 0;">
+      Notify me
     </button>
   </form>
-  <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.75rem;">
-    We'll email you when the {gpuName} price drops below your threshold. Unsubscribe anytime.
+
+  <p id={`${formId}-status`} role="status" aria-live="polite" style="font-size: 0.8rem; margin-top: 0.75rem; min-height: 1.2em; color: var(--text-dim);">
+    {wantsThreshold
+      ? `We'll email you when the ${gpuName} drops below your threshold. Unsubscribe anytime.`
+      : `We'll email you the first time a provider lists the ${gpuName}. Unsubscribe anytime.`}
   </p>
 </div>
+
+<script is:inline define:vars={{ formId }}>
+  (() => {
+    const form = document.getElementById(formId);
+    const status = document.getElementById(`${formId}-status`);
+    if (!form || !status) return;
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const button = form.querySelector('button[type="submit"]');
+      button.disabled = true;
+      status.style.color = 'var(--text-dim)';
+      status.textContent = 'Subscribing…';
+
+      try {
+        const response = await fetch(form.action, {
+          method: 'POST',
+          body: new FormData(form),
+          headers: { Accept: 'application/json' },
+        });
+        const body = await response.json().catch(() => ({}));
+        if (response.ok) {
+          status.style.color = 'var(--accent)';
+          status.textContent = body.message || 'Subscribed. Check your inbox to confirm.';
+          form.reset();
+        } else {
+          status.style.color = '#e66767';
+          status.textContent = body.error || 'That did not work. Please try again.';
+          button.disabled = false;
+        }
+      } catch {
+        status.style.color = '#e66767';
+        status.textContent = 'Network error. Please try again.';
+        button.disabled = false;
+      }
+    });
+  })();
+</script>

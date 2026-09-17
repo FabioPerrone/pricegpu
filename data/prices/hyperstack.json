@@ -3,7 +3,7 @@
   "scraper_version": "1.0.0",
   "items": [
     {
-      "gpu_slug": "h100-80gb-sxm",
+      "gpu_slug": "h100-sxm",
       "configuration": "1x H100 SXM5 80GB",
       "price_usd_per_hour": 2.79,
       "billing": "per-minute",
@@ -12,7 +12,7 @@
       "deal_url": "https://www.hyperstack.cloud/gpu-pricing"
     },
     {
-      "gpu_slug": "h100-80gb-pcie",
+      "gpu_slug": "h100-pcie",
       "configuration": "1x H100 NVL 80GB",
       "price_usd_per_hour": 2.45,
       "billing": "per-minute",

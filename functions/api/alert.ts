@@ -69,17 +69,22 @@ export async function onRequest(context: any): Promise<Response> {
     // TODO: Forward to email service (Buttondown, ConvertKit, etc.)
     // Example: await sendToEmailService(email, alert, env);
 
-    // Return success
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: `Subscribed ${email} to ${gpu_name} price alerts (alert if below $${price_threshold.toFixed(2)}/hr)`,
-      }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    const message = price_threshold > 0
+      ? `Subscribed. We'll email ${email} when the ${gpu_name} drops below $${price_threshold.toFixed(2)}/hr.`
+      : `Subscribed. We'll email ${email} when the ${gpu_name} becomes available.`;
+
+    // The form posts over fetch and asks for JSON. Without JavaScript the
+    // browser navigates to whatever comes back, so a plain submit must not be
+    // answered with a JSON body — that leaves the visitor staring at source.
+    if (!request.headers.get('Accept')?.includes('application/json')) {
+      const back = request.headers.get('Referer') ?? '/';
+      return new Response(null, { status: 303, headers: { Location: `${back}#subscribed` } });
+    }
+
+    return new Response(JSON.stringify({ success: true, message }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (err) {
     console.error('Alert subscription error:', err);
     return new Response(JSON.stringify({ error: 'Internal server error' }), {

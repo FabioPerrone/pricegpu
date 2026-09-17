@@ -1,17 +1,34 @@
 ---
-// Renders a responsive AdSense ad unit.
-// Respects Consent Mode v2: ads only load after user grants ad_storage consent.
-// Usage: <AdSlot /> in any page/layout.
+/**
+ * AdSense unit, rendered only once a real slot id is configured.
+ *
+ * This shipped with data-ad-slot="0000000000" — a placeholder that can never
+ * fill — so every page carrying it reserved roughly 200px of blank space
+ * between the price table and the rest of the page. On an affiliate-funded
+ * site that space costs twice: it earns nothing and it pushes the links that
+ * do earn further down.
+ *
+ * Set PUBLIC_ADSENSE_SLOT to the unit id from the AdSense console to enable.
+ */
+interface Props {
+  /** Override the configured slot, for a second unit on one page. */
+  slot?: string;
+}
+
+const slot = Astro.props.slot ?? import.meta.env.PUBLIC_ADSENSE_SLOT;
+const client = import.meta.env.PUBLIC_ADSENSE_CLIENT ?? 'ca-pub-1183159472799366';
 ---
 
-<div style="margin: 2rem 0; text-align: center;">
-  <ins
-    class="adsbygoogle"
-    style="display: inline-block; width: 100%; max-width: 728px; height: 90px; margin: 1rem 0;"
-    data-ad-client="ca-pub-1183159472799366"
-    data-ad-slot="0000000000"
-  ></ins>
-  <script is:inline>
-    (adsbygoogle = window.adsbygoogle || []).push({});
-  </script>
-</div>
+{slot && (
+  <div style="margin: 2rem 0; text-align: center;">
+    <ins
+      class="adsbygoogle"
+      style="display: inline-block; width: 100%; max-width: 728px; height: 90px;"
+      data-ad-client={client}
+      data-ad-slot={slot}
+    ></ins>
+    <script is:inline>
+      (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+  </div>
+)}

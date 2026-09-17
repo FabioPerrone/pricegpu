@@ -26,7 +26,7 @@ export const GET: APIRoute = () => {
   <channel>
     <title>PriceGPU — Live Cloud GPU Pricing</title>
     <link>https://pricegpu.com</link>
-    <description>Live cloud GPU pricing across every major provider. Updated weekly.</description>
+    <description>Live cloud GPU pricing across every major provider. Updated daily.</description>
     <language>en-us</language>
     <lastBuildDate>${now}</lastBuildDate>
     <atom:link href="https://pricegpu.com/api/feed.xml" rel="self" type="application/rss+xml" />

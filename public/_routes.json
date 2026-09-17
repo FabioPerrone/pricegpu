@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "include": ["/go/*", "/api/event", "/api/alert", "/admin/*"],
+  "exclude": []
+}

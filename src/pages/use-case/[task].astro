@@ -30,13 +30,13 @@ const flatPrices = eligibleGPUs.flatMap((gpu) =>
 
 const cheapestOverall = cheapestOptions[0];
 const title = buildTitle([`Cheapest GPU for ${useCase.name}`, 'PriceGPU']);
-const description = buildDescription(`Best GPUs for ${useCase.name}. Requires ${useCase.min_vram_gb}GB+ VRAM. ${cheapestOverall ? `Cheapest: ${cheapestOverall.gpu.name} at ${formatPrice(cheapestOverall.cheapest.price_usd_per_hour)}/hr on ${cheapestOverall.provider?.name}.` : ''}`);
+const description = buildDescription(`Best GPUs for ${useCase.name}. Requires ${useCase.min_vram_gb}GB+ VRAM. ${cheapestOverall ? `Cheapest: ${cheapestOverall.gpu.name} at ${formatPrice(cheapestOverall.cheapest.price_usd_per_hour)} on ${cheapestOverall.provider?.name}.` : ''}`);
 const canonical = buildCanonical(`/use-case/${useCase.slug}`);
 
 const faqs = [
   { q: `What GPU do I need for ${useCase.name}?`, a: `Requires at least ${useCase.min_vram_gb}GB VRAM. Recommended: ${useCase.recommended_vram_gb}GB+. Ideal: ${idealGPUs.map((g) => g.name).join(', ') || eligibleGPUs.slice(0, 3).map((g) => g.name).join(', ')}.` },
-  { q: `What is the cheapest GPU for ${useCase.name}?`, a: cheapestOverall ? `${cheapestOverall.gpu.name} at ${formatPrice(cheapestOverall.cheapest.price_usd_per_hour)}/hr on ${cheapestOverall.provider?.name}.` : 'Check the pricing table.' },
-  { q: `How much does ${useCase.name} cost per hour?`, a: cheapestOverall ? `From ${formatPrice(cheapestOverall.cheapest.price_usd_per_hour)}/hr. Runtime: ${useCase.typical_runtime}.` : `Runtime: ${useCase.typical_runtime}.` },
+  { q: `What is the cheapest GPU for ${useCase.name}?`, a: cheapestOverall ? `${cheapestOverall.gpu.name} at ${formatPrice(cheapestOverall.cheapest.price_usd_per_hour)} on ${cheapestOverall.provider?.name}.` : 'Check the pricing table.' },
+  { q: `How much does ${useCase.name} cost per hour?`, a: cheapestOverall ? `From ${formatPrice(cheapestOverall.cheapest.price_usd_per_hour)}. Runtime: ${useCase.typical_runtime}.` : `Runtime: ${useCase.typical_runtime}.` },
 ];
 
 const schemas = [
@@ -56,7 +56,7 @@ const relatedLinks = eligibleGPUs.slice(0, 4).map((g) => ({ title: `${g.name} fo
     <div style="margin-bottom: 1.5rem;">
       <CTA providerSlug={cheapestOverall.provider.slug} providerName={cheapestOverall.provider.name}
         headline={`Cheapest for ${useCase.name}: ${cheapestOverall.gpu.name} on ${cheapestOverall.provider.name}`}
-        note={`${formatPrice(cheapestOverall.cheapest.price_usd_per_hour)}/hr · verify on provider site`} />
+        note={`${formatPrice(cheapestOverall.cheapest.price_usd_per_hour)} · verify on provider site`} />
     </div>
   )}
 

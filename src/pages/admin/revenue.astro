@@ -1,39 +1,92 @@
 ---
-import { buildTitle, buildCanonical } from '../../lib/seo.ts';
-import { getProviders } from '../../lib/pricing.ts';
+/**
+ * Operating dashboard.
+ *
+ * Built around the one question the site could not previously answer: of the
+ * people who land on a page, how many leave through an affiliate link, and
+ * which pages waste the traffic they get. Pageviews alone never showed that.
+ *
+ * Reads data/metrics.json (scripts/metrics.ts) and data/health.json
+ * (scripts/health.ts). When either is missing it says so and explains how to
+ * wire it, rather than rendering a confident $0.00.
+ */
 import fs from 'node:fs';
 import path from 'node:path';
+import { buildTitle, buildCanonical } from '../../lib/seo.ts';
+import { getProviders } from '../../lib/pricing.ts';
 
-const title = buildTitle(['Revenue Dashboard', 'PriceGPU']);
+const title = buildTitle(['Dashboard', 'PriceGPU']);
 const canonical = buildCanonical('/admin/revenue');
 
-function readJson<T>(file: string, fallback: T): T {
+function readJson<T>(file: string): T | null {
   try {
-    return JSON.parse(fs.readFileSync(path.resolve(process.cwd(), file), 'utf-8'));
+    return JSON.parse(fs.readFileSync(path.resolve(process.cwd(), file), 'utf-8')) as T;
   } catch {
-    return fallback;
+    return null;
   }
 }
 
-const revenue = readJson('data/revenue.json', { pageviews: 0, lastSync: null, status: 'unknown' }) as {
-  pageviews: number;
-  lastSync: string | null;
-  status: string;
-  note?: string;
-};
-
-const affiliateReport = readJson('data/affiliate-report.json', null) as null | {
+interface Row { [key: string]: string | number | null }
+interface Metrics {
   generatedAt: string;
   periodDays: number;
-  from: string;
-  to: string;
-  totalClicks: number;
-  byProvider: { slug: string; clicks: number }[];
-};
+  totals: { views: number; clicks: number; ctr: number | null; revenueUsd: number; rpmUsd: number | null; epcUsd: number | null };
+  byDay: Row[];
+  byProvider: Row[];
+  byPage: Row[];
+  byGpu: Row[];
+  byPosition: Row[];
+  byReferrer: Row[];
+  byDevice: Row[];
+}
+interface Health {
+  generatedAt: string;
+  feeds: { provider: string; rows: number; ageDays: number | null; stale: boolean; monetized: boolean }[];
+  summary: {
+    priceRows: number; staleFeeds: string[]; emptyFeeds: string[];
+    unmonetizedWithPrices: string[]; gpusInCatalogue: number; gpusWithPrices: number;
+    emptyGpuPages: string[]; orphanedGpuSlugs: string[];
+  };
+}
 
+const metrics = readJson<Metrics>('data/metrics.json');
+const health = readJson<Health>('data/health.json');
 const providers = getProviders();
-const providerMap = Object.fromEntries(providers.map(p => [p.slug, p.name]));
-const hasAffiliateProgram = new Set(providers.filter(p => p.affiliate_param_env).map(p => p.slug));
+const providerName = (slug: string) => providers.find((p) => p.slug === slug)?.name ?? slug;
+
+const num = (v: unknown): number => Number(v ?? 0);
+const fmt = (n: number) => n.toLocaleString('en-US');
+
+// --- chart geometry -------------------------------------------------------
+// Views and clicks differ by orders of magnitude, so they get one small chart
+// each against their own scale. Never two scales on one pair of axes.
+const W = 620;
+const H = 90;
+
+function areaPath(values: number[]): { line: string; area: string } {
+  if (values.length < 2) return { line: '', area: '' };
+  const max = Math.max(...values, 1);
+  const step = W / (values.length - 1);
+  const pts = values.map((v, i) => [i * step, H - (v / max) * (H - 8) - 4] as const);
+  const line = pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+  return { line, area: `${line} L${W},${H} L0,${H} Z` };
+}
+
+const days = metrics?.byDay ?? [];
+const viewSeries = areaPath(days.map((d) => num(d.views)));
+const clickSeries = areaPath(days.map((d) => num(d.clicks)));
+const peakViews = Math.max(...days.map((d) => num(d.views)), 0);
+const peakClicks = Math.max(...days.map((d) => num(d.clicks)), 0);
+
+const maxProviderClicks = Math.max(...(metrics?.byProvider ?? []).map((p) => num(p.clicks)), 1);
+const maxPositionClicks = Math.max(...(metrics?.byPosition ?? []).map((p) => num(p.clicks)), 1);
+
+// Pages drawing real traffic that convert worse than the site average are the
+// shortlist worth editing — the dashboard's main actionable output.
+const siteCtr = metrics?.totals.ctr ?? 0;
+const underperforming = (metrics?.byPage ?? [])
+  .filter((p) => num(p.views) >= 20 && num(p.ctr) < siteCtr)
+  .slice(0, 10);
 ---
 
 <!doctype html>
@@ -42,102 +95,286 @@ const hasAffiliateProgram = new Set(providers.filter(p => p.affiliate_param_env)
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
-    <meta name="description" content="PriceGPU revenue dashboard - traffic and affiliate metrics" />
+    <meta name="description" content="PriceGPU operating dashboard — funnel, affiliate clicks and data health" />
     <meta name="robots" content="noindex, nofollow" />
     <link rel="canonical" href={canonical} />
     <style>
       *, *::before, *::after { box-sizing: border-box; }
-      body { background: #0d0d0d; color: #e8e8e8; font-family: monospace; padding: 2rem; max-width: 900px; margin: 0 auto; }
-      h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
-      h2 { font-size: 1rem; color: #ccc; margin: 2rem 0 0.75rem; border-bottom: 1px solid #2a2a2a; padding-bottom: 0.4rem; }
-      a { color: #00D26A; }
-      .meta { color: #888; font-size: 0.8rem; margin-bottom: 2rem; }
-      .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
-      .stat { background: #161616; border: 1px solid #2a2a2a; border-radius: 6px; padding: 1rem; }
-      .stat-value { font-size: 1.6rem; font-weight: bold; color: #00D26A; }
-      .stat-label { font-size: 0.75rem; color: #888; margin-top: 0.25rem; }
-      table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-      th { text-align: left; padding: 0.5rem 0.75rem; color: #aaa; border-bottom: 1px solid #2a2a2a; font-weight: normal; }
-      td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #1a1a1a; }
-      tr:hover td { background: #111; }
-      .badge { display: inline-block; padding: 0.1rem 0.4rem; border-radius: 3px; font-size: 0.7rem; }
-      .badge-yes { background: #00D26A22; color: #00D26A; border: 1px solid #00D26A44; }
-      .badge-no { background: #ff444422; color: #ff6666; border: 1px solid #ff444444; }
-      .bar-wrap { background: #1a1a1a; border-radius: 3px; height: 6px; width: 100%; margin-top: 4px; }
-      .bar { background: #00D26A; height: 6px; border-radius: 3px; }
-      pre { background: #161616; border: 1px solid #2a2a2a; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.75rem; }
-      details summary { cursor: pointer; color: #888; font-size: 0.8rem; margin-top: 2rem; }
+      :root {
+        --bg: #0d0d0d; --surface: #161616; --border: #2a2a2a;
+        --text: #e8e8e8; --text-secondary: #b4b4b4; --text-muted: #8f8f8f;
+        --series-views: #3987e5; --series-clicks: #199e70;
+        --good: #199e70; --warn: #c98500; --bad: #e66767;
+      }
+      body {
+        background: var(--bg); color: var(--text); margin: 0 auto; padding: 2rem 1.5rem 4rem;
+        max-width: 1000px; line-height: 1.5;
+        font-family: ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace;
+      }
+      h1 { font-size: 1.1rem; margin: 0 0 0.25rem; }
+      h2 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em;
+           color: var(--text-secondary); margin: 2.5rem 0 0.9rem; font-weight: 600; }
+      .meta { color: var(--text-muted); font-size: 0.8rem; margin: 0 0 2rem; }
+      .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.1rem 1.25rem; }
+
+      .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem; }
+      .tile .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); }
+      .tile .value { font-size: 1.7rem; font-weight: 700; margin-top: 0.3rem; font-variant-numeric: tabular-nums; }
+      .tile .note { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.15rem; }
+
+      table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+      th { text-align: left; color: var(--text-muted); font-weight: 600; font-size: 0.7rem;
+           text-transform: uppercase; letter-spacing: 0.06em; padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--border); }
+      td { padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--border); }
+      tr:last-child td { border-bottom: none; }
+      .n { text-align: right; font-variant-numeric: tabular-nums; }
+      .path { color: var(--text-secondary); word-break: break-all; }
+
+      /* 4px rounded data-end, anchored to the baseline. */
+      .bar { height: 10px; border-radius: 0 4px 4px 0; display: block; }
+      .bar-row { display: grid; grid-template-columns: 150px 1fr 60px; gap: 0.75rem; align-items: center; padding: 0.3rem 0; }
+      .bar-label { font-size: 0.8rem; color: var(--text-secondary); }
+      .bar-value { font-size: 0.8rem; text-align: right; font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+
+      .chart { display: block; width: 100%; height: auto; }
+      .chart-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.4rem; }
+      .chart-title { font-size: 0.8rem; color: var(--text-secondary); }
+      .chart-peak { font-size: 0.72rem; color: var(--text-muted); }
+
+      .pill { display: inline-block; padding: 0.1rem 0.45rem; border-radius: 3px; font-size: 0.68rem;
+              font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+      .pill-good { background: rgba(25,158,112,0.16); color: #4cc79a; }
+      .pill-warn { background: rgba(201,133,0,0.16); color: #e3a53a; }
+      .pill-bad  { background: rgba(230,103,103,0.16); color: var(--bad); }
+
+      .empty { border: 1px dashed var(--border); border-radius: 8px; padding: 1.5rem; color: var(--text-secondary); }
+      .empty code { background: #0a0a0a; padding: 0.15rem 0.4rem; border-radius: 3px; color: var(--text); font-size: 0.8rem; }
+      .empty ol { margin: 0.75rem 0 0; padding-left: 1.2rem; }
+      .empty li { margin-bottom: 0.4rem; font-size: 0.85rem; }
+      a { color: #4cc79a; }
+      @media (max-width: 600px) { .bar-row { grid-template-columns: 110px 1fr 52px; } }
     </style>
   </head>
+
   <body>
-    <a href="/">← Back to site</a>
-    <h1>Revenue Dashboard</h1>
+    <h1>PriceGPU dashboard</h1>
     <p class="meta">
-      Gated by Cloudflare Access. Last sync: {revenue.lastSync ? new Date(revenue.lastSync).toUTCString() : 'never'}
+      {metrics
+        ? `Last ${metrics.periodDays} days · generated ${new Date(metrics.generatedAt).toLocaleString('en-US')}`
+        : 'Traffic data not available'}
     </p>
 
-    <h2>Traffic</h2>
-    <div class="stats">
-      <div class="stat">
-        <div class="stat-value">{revenue.pageviews.toLocaleString()}</div>
-        <div class="stat-label">Pageviews (last 30 days)</div>
+    {!metrics ? (
+      <div class="empty">
+        <strong>Click tracking is not wired up yet.</strong>
+        <p style="margin:0.5rem 0 0;font-size:0.85rem;">
+          The redirect and beacon both write to a D1 database. Until it exists and is bound,
+          clicks are not recorded and this page has nothing to show.
+        </p>
+        <ol>
+          <li><code>npx wrangler d1 create pricegpu-analytics</code></li>
+          <li><code>npx wrangler d1 execute pricegpu-analytics --remote --file=schema.sql</code></li>
+          <li>Bind it to the Pages project as <code>ANALYTICS</code></li>
+          <li>Set <code>CF_D1_DATABASE_ID</code>, then run <code>npm run metrics</code></li>
+        </ol>
       </div>
-      {affiliateReport && (
-        <div class="stat">
-          <div class="stat-value">{affiliateReport.totalClicks.toLocaleString()}</div>
-          <div class="stat-label">Affiliate clicks (last {affiliateReport.periodDays} days)</div>
-        </div>
-      )}
-      <div class="stat">
-        <div class="stat-value">{revenue.pageviews >= 10000 ? '✅' : `${Math.round(revenue.pageviews / 100)}%`}</div>
-        <div class="stat-label">Ezoic threshold (10k pageviews)</div>
-      </div>
-    </div>
-
-    {affiliateReport ? (
-      <>
-        <h2>Affiliate Clicks by Provider — last {affiliateReport.periodDays} days ({affiliateReport.from} → {affiliateReport.to})</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Provider</th>
-              <th>Clicks</th>
-              <th>Share</th>
-              <th>Affiliate program</th>
-            </tr>
-          </thead>
-          <tbody>
-            {affiliateReport.byProvider.map(row => {
-              const pct = affiliateReport.totalClicks > 0
-                ? Math.round((row.clicks / affiliateReport.totalClicks) * 100)
-                : 0;
-              const hasRef = hasAffiliateProgram.has(row.slug);
-              return (
-                <tr>
-                  <td>{providerMap[row.slug] ?? row.slug}</td>
-                  <td>{row.clicks.toLocaleString()}</td>
-                  <td>
-                    {pct}%
-                    <div class="bar-wrap"><div class="bar" style={`width:${pct}%`}></div></div>
-                  </td>
-                  <td>
-                    <span class={`badge ${hasRef ? 'badge-yes' : 'badge-no'}`}>
-                      {hasRef ? 'tracked' : 'no ref'}
-                    </span>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </>
     ) : (
-      <p style="color:#666;font-size:0.85rem;">No affiliate report yet. Run <code>revenue-sync</code> workflow.</p>
+      <>
+        <section class="tiles">
+          <div class="card tile">
+            <div class="label">Views</div>
+            <div class="value">{fmt(metrics.totals.views)}</div>
+          </div>
+          <div class="card tile">
+            <div class="label">Outbound clicks</div>
+            <div class="value" style="color: var(--series-clicks);">{fmt(metrics.totals.clicks)}</div>
+          </div>
+          <div class="card tile">
+            <div class="label">Click-through</div>
+            <div class="value">{metrics.totals.ctr === null ? '—' : `${metrics.totals.ctr}%`}</div>
+            <div class="note">views that leave for a provider</div>
+          </div>
+          <div class="card tile">
+            <div class="label">Revenue</div>
+            <div class="value">${metrics.totals.revenueUsd.toFixed(2)}</div>
+            <div class="note">
+              {metrics.totals.revenueUsd === 0 ? 'no conversions imported yet' : `$${metrics.totals.rpmUsd ?? 0} per 1k views`}
+            </div>
+          </div>
+        </section>
+
+        {days.length > 1 && (
+          <>
+            <h2>Daily</h2>
+            <div class="card">
+              <div class="chart-head">
+                <span class="chart-title" style="color: var(--series-views);">Views</span>
+                <span class="chart-peak">peak {fmt(peakViews)}</span>
+              </div>
+              <svg class="chart" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img"
+                   aria-label={`Daily views, peaking at ${peakViews}`}>
+                <path d={viewSeries.area} fill="var(--series-views)" fill-opacity="0.14" />
+                <path d={viewSeries.line} fill="none" stroke="var(--series-views)" stroke-width="2"
+                      stroke-linejoin="round" vector-effect="non-scaling-stroke" />
+              </svg>
+
+              <div class="chart-head" style="margin-top:1.25rem;">
+                <span class="chart-title" style="color: var(--series-clicks);">Outbound clicks</span>
+                <span class="chart-peak">peak {fmt(peakClicks)}</span>
+              </div>
+              <svg class="chart" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img"
+                   aria-label={`Daily outbound clicks, peaking at ${peakClicks}`}>
+                <path d={clickSeries.area} fill="var(--series-clicks)" fill-opacity="0.14" />
+                <path d={clickSeries.line} fill="none" stroke="var(--series-clicks)" stroke-width="2"
+                      stroke-linejoin="round" vector-effect="non-scaling-stroke" />
+              </svg>
+            </div>
+          </>
+        )}
+
+        {metrics.byProvider.length > 0 && (
+          <>
+            <h2>Clicks by provider</h2>
+            <div class="card">
+              {metrics.byProvider.map((p) => (
+                <div class="bar-row">
+                  <span class="bar-label">{providerName(String(p.provider))}</span>
+                  <span class="bar" style={`width:${(num(p.clicks) / maxProviderClicks) * 100}%;background:var(--series-clicks);`}></span>
+                  <span class="bar-value">{fmt(num(p.clicks))}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {underperforming.length > 0 && (
+          <>
+            <h2>Pages wasting traffic</h2>
+            <p class="meta" style="margin:-0.4rem 0 0.9rem;">
+              20+ views and converting below the site average of {siteCtr}%.
+            </p>
+            <div class="card" style="padding:0.4rem 0.6rem;">
+              <table>
+                <thead>
+                  <tr><th scope="col">Page</th><th scope="col" class="n">Views</th><th scope="col" class="n">Clicks</th><th scope="col" class="n">CTR</th></tr>
+                </thead>
+                <tbody>
+                  {underperforming.map((p) => (
+                    <tr>
+                      <td class="path">{p.path}</td>
+                      <td class="n">{fmt(num(p.views))}</td>
+                      <td class="n">{fmt(num(p.clicks))}</td>
+                      <td class="n" style="color: var(--bad);">{num(p.ctr)}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        {metrics.byPage.length > 0 && (
+          <>
+            <h2>Top pages</h2>
+            <div class="card" style="padding:0.4rem 0.6rem;">
+              <table>
+                <thead>
+                  <tr><th scope="col">Page</th><th scope="col" class="n">Views</th><th scope="col" class="n">Clicks</th><th scope="col" class="n">CTR</th></tr>
+                </thead>
+                <tbody>
+                  {metrics.byPage.slice(0, 15).map((p) => (
+                    <tr>
+                      <td class="path">{p.path}</td>
+                      <td class="n">{fmt(num(p.views))}</td>
+                      <td class="n">{fmt(num(p.clicks))}</td>
+                      <td class="n">{p.ctr === null ? '—' : `${num(p.ctr)}%`}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        {metrics.byPosition.length > 0 && (
+          <>
+            <h2>How far down the table people click</h2>
+            <p class="meta" style="margin:-0.4rem 0 0.9rem;">
+              Rows below the fold that never get clicked are rows worth cutting.
+            </p>
+            <div class="card">
+              {metrics.byPosition.map((p) => (
+                <div class="bar-row">
+                  <span class="bar-label">row {p.position}</span>
+                  <span class="bar" style={`width:${(num(p.clicks) / maxPositionClicks) * 100}%;background:var(--series-clicks);`}></span>
+                  <span class="bar-value">{fmt(num(p.clicks))}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </>
     )}
 
-    <details>
-      <summary>Raw JSON</summary>
-      <pre>{JSON.stringify({ revenue, affiliateReport }, null, 2)}</pre>
-    </details>
+    <h2>Data health</h2>
+    {!health ? (
+      <div class="empty">Run <code>npm run health</code> to generate data/health.json.</div>
+    ) : (
+      <>
+        <section class="tiles" style="margin-bottom:0.9rem;">
+          <div class="card tile">
+            <div class="label">Price rows</div>
+            <div class="value">{fmt(health.summary.priceRows)}</div>
+          </div>
+          <div class="card tile">
+            <div class="label">GPUs priced</div>
+            <div class="value">{health.summary.gpusWithPrices}<span style="color:var(--text-muted);font-size:1rem;">/{health.summary.gpusInCatalogue}</span></div>
+            <div class="note">{health.summary.emptyGpuPages.length} pages render empty</div>
+          </div>
+          <div class="card tile">
+            <div class="label">Stale feeds</div>
+            <div class="value" style={health.summary.staleFeeds.length ? 'color: var(--bad);' : ''}>
+              {health.summary.staleFeeds.length}
+            </div>
+          </div>
+          <div class="card tile">
+            <div class="label">Unmonetized</div>
+            <div class="value" style={health.summary.unmonetizedWithPrices.length ? 'color: var(--warn);' : ''}>
+              {health.summary.unmonetizedWithPrices.length}
+            </div>
+            <div class="note">providers earning nothing</div>
+          </div>
+        </section>
+
+        <div class="card" style="padding:0.4rem 0.6rem;">
+          <table>
+            <thead>
+              <tr><th scope="col">Provider</th><th scope="col" class="n">Rows</th><th scope="col" class="n">Age</th><th scope="col">Status</th></tr>
+            </thead>
+            <tbody>
+              {health.feeds.map((f) => (
+                <tr>
+                  <td>{providerName(f.provider)}</td>
+                  <td class="n">{f.rows}</td>
+                  <td class="n">{f.ageDays === null ? '—' : `${f.ageDays}d`}</td>
+                  <td>
+                    {f.stale
+                      ? <span class="pill pill-bad">stale</span>
+                      : <span class="pill pill-good">fresh</span>}
+                    {!f.monetized && <span class="pill pill-warn" style="margin-left:0.35rem;">no program</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {health.summary.emptyGpuPages.length > 0 && (
+          <p class="meta" style="margin-top:0.9rem;">
+            GPU pages with no prices: {health.summary.emptyGpuPages.join(', ')}
+          </p>
+        )}
+      </>
+    )}
   </body>
 </html>

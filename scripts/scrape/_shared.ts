@@ -52,7 +52,7 @@ export const GPU_SLUG_MAP: Record<string, string> = {
   "NVIDIA H100 SXM5 80GB": "h100-sxm",
   "H100-SXM": "h100-sxm",
   "h100-sxm": "h100-sxm",
-  "h100-80gb-sxm": "h100-sxm",
+  "h100-sxm": "h100-sxm",
   "H100 PCIe 80GB": "h100-pcie",
   "H100 PCIe": "h100-pcie",
   "H100 80GB PCIe": "h100-pcie",
@@ -244,4 +244,17 @@ export async function withRetry<T>(fn: () => Promise<T>, retries = 3): Promise<T
     }
   }
   throw lastError;
+}
+/**
+ * Launches Chromium, honouring PLAYWRIGHT_EXECUTABLE_PATH.
+ *
+ * CI installs its own browser, but sandboxes and containers often ship one at
+ * a fixed path that Playwright's own resolution misses — which makes a scraper
+ * impossible to run locally, and an unrunnable scraper is one nobody notices
+ * has broken.
+ */
+export async function launchBrowser() {
+  const { chromium } = await import("playwright");
+  const executablePath = process.env.PLAYWRIGHT_EXECUTABLE_PATH;
+  return chromium.launch({ headless: true, ...(executablePath ? { executablePath } : {}) });
 }

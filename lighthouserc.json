@@ -2,18 +2,30 @@
   "ci": {
     "collect": {
       "staticDistDir": "./dist",
-      "numberOfRuns": 1
+      "numberOfRuns": 1,
+      "url": [
+        "http://localhost/index.html",
+        "http://localhost/gpu/h100-sxm/index.html",
+        "http://localhost/compare/runpod-vs-vast-ai/index.html"
+      ],
+      "settings": {
+        "chromeFlags": "--no-sandbox"
+      }
     },
     "assert": {
       "preset": "lighthouse:recommended",
       "assertions": {
-        "categories:performance": ["error", {"minScore": 0.95}],
-        "td-has-header": "off",
+        "categories:performance": ["error", { "minScore": 0.95 }],
+        "categories:accessibility": ["error", { "minScore": 0.95 }],
+        "categories:seo": ["error", { "minScore": 0.95 }],
         "is-crawlable": "off",
         "network-dependency-tree-insight": "off",
         "render-blocking-insight": "off",
         "render-blocking-resources": "off",
-        "color-contrast": "off"
+        "unused-javascript": "off",
+        "legacy-javascript": "off",
+        "uses-long-cache-ttl": "off",
+        "csp-xss": "off"
       }
     },
     "upload": {

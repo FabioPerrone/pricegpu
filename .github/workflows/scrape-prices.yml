@@ -2,7 +2,8 @@ name: Scrape GPU Prices
 
 on:
   schedule:
-    - cron: '0 3 * * 1'
+    # Daily. Prices are the product; weekly data is stale on arrival.
+    - cron: '0 3 * * *'
   workflow_dispatch:
 
 env:
@@ -15,6 +16,7 @@ jobs:
     permissions:
       contents: write
       actions: write
+      issues: write
 
     steps:
       - uses: actions/checkout@v4
@@ -26,37 +28,34 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npx playwright install chromium --with-deps
-      - run: npx tsx scripts/scrape/runpod.ts
-        continue-on-error: true
-      - run: npx tsx scripts/scrape/vast.ts
-        continue-on-error: true
-      - run: npx tsx scripts/scrape/lambda.ts
-        continue-on-error: true
-      - run: npx tsx scripts/scrape/paperspace.ts
-        continue-on-error: true
-      - run: npx tsx scripts/scrape/modal.ts
-        continue-on-error: true
-      - run: npx tsx scripts/scrape/coreweave.ts
-        continue-on-error: true
-      - run: npx tsx scripts/scrape/tensordock.ts
-        continue-on-error: true
-      - run: npx tsx scripts/scrape/genesis.ts
-        continue-on-error: true
-      - run: npx tsx scripts/scrape/hyperstack.ts
-        continue-on-error: true
-      - run: npx tsx scripts/scrape/together.ts
-        continue-on-error: true
-      - run: npx tsx scripts/scrape/replicate.ts
-        continue-on-error: true
-      - run: npx tsx scripts/scrape/fal.ts
-        continue-on-error: true
-      - run: npx tsx scripts/scrape/salad.ts
-        continue-on-error: true
-      - run: npx tsx scripts/scrape/fluidstack.ts
-        continue-on-error: true
-      - run: npx tsx scripts/scrape/datacrunch.ts
-        continue-on-error: true
-      - run: |
+
+      # One provider being down must not abort the run, but the outcome of
+      # each scraper has to be visible. Previously every step carried
+      # continue-on-error, so all fifteen could fail and the workflow still
+      # reported success — which is how prices went 141 days stale unnoticed.
+      - name: Scrape providers
+        id: scrape
+        run: |
+          failed=()
+          for s in runpod vast lambda paperspace modal coreweave tensordock genesis \
+                   hyperstack together replicate fal salad fluidstack datacrunch; do
+            if npx tsx "scripts/scrape/$s.ts"; then
+              echo "::notice::$s ok"
+            else
+              echo "::warning::$s failed"
+              failed+=("$s")
+            fi
+          done
+          echo "failed=${failed[*]}" >> "$GITHUB_OUTPUT"
+          echo "failed_count=${#failed[@]}" >> "$GITHUB_OUTPUT"
+
+      # The gate. A run that changes nothing is a failed run, however many
+      # individual scrapers exited zero.
+      - name: Verify prices actually refreshed
+        run: npx tsx scripts/health.ts --strict --max-stale-days 3
+
+      - name: Commit refreshed prices
+        run: |
           git config user.email "bot@pricegpu.com"
           git config user.name "PriceGPU Bot"
           git add data/prices/
@@ -66,7 +65,54 @@ jobs:
             git commit -m "chore: update GPU prices $(date -u '+%Y-%m-%d')"
             git push
           fi
+
+      - name: Archive price history
+        run: npx tsx scripts/archive-history.ts
+        continue-on-error: true
+
+      - name: Commit history
+        run: |
+          git add data/history/ 2>/dev/null || true
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: archive price history $(date -u '+%Y-%m-%d')"
+            git push
+          fi
+
+      # A silent pipeline is the failure mode this workflow is guarding
+      # against, so surface a broken scraper where it will be seen.
+      - name: Open an issue if scrapers are failing
+        if: failure() || steps.scrape.outputs.failed_count != '0'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const failed = '${{ steps.scrape.outputs.failed }}'.trim();
+            const title = 'Price scrapers are failing';
+            const { data: open } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', labels: 'scraper-health',
+            });
+            const body = [
+              failed ? `Failed scrapers: \`${failed}\`` : 'The freshness gate failed.',
+              '',
+              `Prices are the product — while this is broken the site serves stale numbers.`,
+              '',
+              `[Workflow run](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`,
+            ].join('\n');
+            if (open.length) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: open[0].number, body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo,
+                title, body, labels: ['scraper-health'],
+              });
+            }
+
       - uses: actions/github-script@v7
+        if: success()
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |

@@ -1,13 +1,14 @@
-import { chromium } from "playwright";
+
 import fs from "fs";
 import path from "path";
 import {
-  PriceItem,
+  launchBrowser,
   normalizeGpuSlug,
   saveProviderPrices,
   withRetry,
   USER_AGENT,
 } from "./_shared.js";
+import type { PriceItem } from "./_shared.js";
 
 const PROVIDER_SLUG = "together";
 const PRICING_URL = "https://www.together.ai/pricing";
@@ -15,7 +16,7 @@ const DEAL_URL = "https://api.together.ai/";
 
 export async function scrape(): Promise<PriceItem[]> {
   return withRetry(async () => {
-    const browser = await chromium.launch({ headless: true });
+    const browser = await launchBrowser();
     const context = await browser.newContext({ userAgent: USER_AGENT });
     const page = await context.newPage();
     const items: PriceItem[] = [];

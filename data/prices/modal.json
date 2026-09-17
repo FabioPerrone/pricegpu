@@ -3,7 +3,7 @@
   "scraper_version": "1.0.0",
   "items": [
     {
-      "gpu_slug": "h100-80gb-sxm",
+      "gpu_slug": "h100-sxm",
       "configuration": "1x H100 SXM",
       "price_usd_per_hour": 3.95,
       "billing": "per-second",
@@ -32,7 +32,7 @@
     {
       "gpu_slug": "rtx-4090",
       "configuration": "1x RTX 4090",
-      "price_usd_per_hour": 1.10,
+      "price_usd_per_hour": 1.1,
       "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",
@@ -59,7 +59,7 @@
     {
       "gpu_slug": "a10g",
       "configuration": "1x A10G",
-      "price_usd_per_hour": 1.10,
+      "price_usd_per_hour": 1.1,
       "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",

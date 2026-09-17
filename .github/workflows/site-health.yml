@@ -1,0 +1,51 @@
+name: Site Health
+
+# Every failure this catches was live on the site at some point: a primary CTA
+# pointing at a page that never existed, affiliate redirects 404ing on 846
+# pages, price rows filed under a GPU slug no page reads. None of it shows up
+# in a build log or a pageview chart, so it gets its own gate.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    # Catches rot that arrives without a commit — a scraper that stopped
+    # returning data, prices ageing past the point of being useful.
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  health:
+    name: Links, affiliate wiring and data freshness
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+
+      - name: Affiliate wiring
+        run: npm run audit:affiliates
+
+      - name: Content health
+        run: npm run health
+
+      - run: npm run build
+
+      - name: Internal links
+        run: npm run audit:links
+
+      - name: Report stale prices
+        if: github.event_name == 'schedule'
+        run: npx tsx scripts/health.ts --strict --max-stale-days 10

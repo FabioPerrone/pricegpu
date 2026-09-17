@@ -10,7 +10,7 @@ const REGIONS = ['us-east', 'us-west', 'eu', 'asia', 'us-central'];
 
 export function getStaticPaths() {
   const REGIONS = ['us-east', 'us-west', 'eu', 'asia', 'us-central'];
-  const TOP_GPU_SLUGS = ['h100-80gb-sxm', 'h100-pcie-80gb', 'a100-80gb-sxm', 'a100-40gb-sxm', 'l40s', 'l4', 'a10', 'rtx-4090', 'rtx-3090', 't4', 'v100-16gb-sxm2'];
+  const TOP_GPU_SLUGS = ['h100-sxm', 'h100-pcie', 'a100-80gb-sxm', 'a100-40gb-sxm', 'l40s', 'l4', 'a10', 'rtx-4090', 'rtx-3090', 't4', 'v100-16gb'];
   const gpus = getGPUs().filter((g) => TOP_GPU_SLUGS.includes(g.slug));
   return REGIONS.flatMap((region) => gpus.map((gpu) => ({ params: { region, gpu: gpu.slug }, props: { gpu } })));
 }
@@ -28,7 +28,7 @@ const cheapestProvider = cheapest ? providers.find((p) => p.slug === cheapest.pr
 const regionLabel = region.replace('-', ' ').toUpperCase();
 
 const title = buildTitle([`${gpu.name} Price in ${regionLabel}`, 'PriceGPU']);
-const description = buildDescription(`${gpu.name} cloud rental in ${regionLabel}. ${regionPrices.length} offers${cheapest ? `, from ${formatPrice(cheapest.price_usd_per_hour)}/hr` : ''}. ${gpu.vram_gb}GB VRAM.`);
+const description = buildDescription(`${gpu.name} cloud rental in ${regionLabel}. ${regionPrices.length} offers${cheapest ? `, from ${formatPrice(cheapest.price_usd_per_hour)}` : ''}. ${gpu.vram_gb}GB VRAM.`);
 const canonical = buildCanonical(`/region/${region}/${gpu.slug}`);
 const schemas = [buildBreadcrumbs([{ name: 'Home', url: '/' }, { name: regionLabel, url: `/region/${region}` }, { name: gpu.name, url: canonical }])];
 
@@ -42,7 +42,7 @@ const relatedLinks = [
   <nav class="breadcrumb"><a href="/">Home</a><span>/</span><a href={`/region/${region}`}>{regionLabel}</a><span>/</span><span>{gpu.name}</span></nav>
   <h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem;">{gpu.name} Cloud Pricing — {regionLabel}</h1>
   <p style="color: var(--text-muted); margin-bottom: 1.5rem;">{gpu.vram_gb}GB VRAM · {gpu.fp16_tflops} TFLOPS FP16 · Region: {regionLabel}</p>
-  {cheapestProvider && <div style="margin-bottom: 1.5rem;"><CTA providerSlug={cheapestProvider.slug} providerName={cheapestProvider.name} headline={`Cheapest in ${regionLabel}: ${formatPrice(cheapest!.price_usd_per_hour)}/hr on ${cheapestProvider.name}`} note={`${cheapest!.availability} · verify on provider site`} /></div>}
+  {cheapestProvider && <div style="margin-bottom: 1.5rem;"><CTA providerSlug={cheapestProvider.slug} providerName={cheapestProvider.name} headline={`Cheapest in ${regionLabel}: ${formatPrice(cheapest!.price_usd_per_hour)} on ${cheapestProvider.name}`} note={`${cheapest!.availability} · verify on provider site`} /></div>}
   {regionPrices.length === 0
     ? <div class="card"><p style="color: var(--text-muted);">No {regionLabel} data for the {gpu.name}. <a href={`/gpu/${gpu.slug}`}>See all regions →</a></p></div>
     : <PriceTable prices={regionPrices} gpuName={gpu.name} />}

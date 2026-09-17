@@ -25,7 +25,7 @@ const scrapedAt = getLastScrapeDate(provider.slug);
 const cheapestItem = prices.length > 0 ? prices.reduce((a, b) => a.price_usd_per_hour < b.price_usd_per_hour ? a : b) : null;
 
 const title = buildTitle([`${provider.name} GPU Cloud Pricing`, 'PriceGPU']);
-const description = buildDescription(`${provider.name} GPU rental pricing: ${prices.length} configurations available${cheapestItem ? `, from ${formatPrice(cheapestItem.price_usd_per_hour)}/hr` : ''}. ${provider.description}`);
+const description = buildDescription(`${provider.name} GPU rental pricing: ${prices.length} configurations available${cheapestItem ? `, from ${formatPrice(cheapestItem.price_usd_per_hour)}` : ''}. ${provider.description}`);
 const canonical = buildCanonical(`/provider/${provider.slug}`);
 
 const faqs = [
@@ -53,7 +53,7 @@ const relatedLinks = [
 
   <div style="display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
     <h1 style="font-size: 1.75rem; font-weight: 700;">{provider.name} GPU Cloud Pricing</h1>
-    {cheapestItem && <span style="font-size: 1.1rem; color: var(--text-muted);">from <strong class="accent">{formatPrice(cheapestItem.price_usd_per_hour)}</strong>/hr</span>}
+    {cheapestItem && <span style="font-size: 1.1rem; color: var(--text-muted);">from <strong class="accent">{formatPrice(cheapestItem.price_usd_per_hour)}</strong></span>}
   </div>
   <p style="color: var(--text-muted); margin-bottom: 1.5rem;">{provider.description}</p>
 

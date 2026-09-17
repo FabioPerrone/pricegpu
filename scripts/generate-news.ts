@@ -140,7 +140,7 @@ function lowestPrice(items: PriceItem[], gpuSlug: string): number | null {
 
 // ── Build market context ──────────────────────────────────────────────────────
 
-const KEY_GPUS = ['h100-80gb-sxm', 'h100-80gb-pcie', 'a100-80gb-sxm', 'a100-40gb', 'rtx-4090', 'l40s', 'a10g', 'rtx-3090'];
+const KEY_GPUS = ['h100-sxm', 'h100-80gb-pcie', 'a100-80gb-sxm', 'a100-40gb', 'rtx-4090', 'l40s', 'a10g', 'rtx-3090'];
 
 const current = loadPrices();
 const previous = loadPrevPrices();

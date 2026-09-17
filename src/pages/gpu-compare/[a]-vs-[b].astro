@@ -10,33 +10,12 @@ import {
 import {
   buildTitle, buildDescription, buildCanonical, buildBreadcrumbs, buildFAQSchema,
 } from '../../lib/seo.ts';
+import { GPU_COMPARE_PAIRS, gpuComparePath, relatedGpuComparisons } from '../../lib/links.ts';
 
 export function getStaticPaths() {
   const gpus = getGPUs();
-  const CURATED_PAIRS = [
-    ['h100-80gb-sxm', 'a100-80gb-sxm'],
-    ['h100-80gb-sxm', 'h100-pcie-80gb'],
-    ['h100-80gb-sxm', 'h200-sxm'],
-    ['a100-80gb-sxm', 'a100-40gb-sxm'],
-    ['a100-80gb-sxm', 'l40s'],
-    ['l40s', 'a6000'],
-    ['l40s', 'rtx-4090'],
-    ['rtx-4090', 'rtx-4080'],
-    ['rtx-4090', 'a10'],
-    ['rtx-4090', 'rtx-3090'],
-    ['a10', 'a10g'],
-    ['a10', 'l4'],
-    ['l4', 't4'],
-    ['v100-16gb-sxm2', 'a100-40gb-sxm'],
-    ['mi300x', 'h100-80gb-sxm'],
-    ['rtx-5090', 'rtx-4090'],
-    ['b100', 'h100-80gb-sxm'],
-    ['b200', 'h100-80gb-sxm'],
-    ['a40', 'a6000'],
-    ['a40', 'l40'],
-  ];
 
-  return CURATED_PAIRS.flatMap(([slugA, slugB]) => {
+  return GPU_COMPARE_PAIRS.flatMap(([slugA, slugB]) => {
     const gpuA = gpus.find((g) => g.slug === slugA);
     const gpuB = gpus.find((g) => g.slug === slugB);
     if (!gpuA || !gpuB) return [];
@@ -94,7 +73,7 @@ const faqs = [
   {
     q: `Which is cheaper to rent, ${gpuA.name} or ${gpuB.name}?`,
     a: cheapestA && cheapestB
-      ? `${cheaperGPU?.name} rents cheaper. ${gpuA.name}: from ${formatPrice(cheapestA.price_usd_per_hour)}/hr; ${gpuB.name}: from ${formatPrice(cheapestB.price_usd_per_hour)}/hr.`
+      ? `${cheaperGPU?.name} rents cheaper. ${gpuA.name}: from ${formatPrice(cheapestA.price_usd_per_hour)}; ${gpuB.name}: from ${formatPrice(cheapestB.price_usd_per_hour)}.`
       : 'See the pricing tables below.',
   },
   {
@@ -103,13 +82,11 @@ const faqs = [
   },
 ];
 
-const allGPUs = getGPUs();
-const relatedLinks = allGPUs
-  .filter((g) => g.slug !== gpuA.slug && g.slug !== gpuB.slug)
-  .slice(0, 6)
+const relatedLinks = relatedGpuComparisons(gpuA.slug)
+  .filter((g) => g.slug !== gpuB.slug)
   .map((g) => ({
     title: `${gpuA.name} vs ${g.name}`,
-    url: `/gpu-compare/${gpuA.slug}-vs-${g.slug}`,
+    url: gpuComparePath(gpuA.slug, g.slug),
     description: `${g.vram_gb}GB VRAM · ${g.architecture}`,
   }));
 
@@ -144,7 +121,7 @@ const cheapestAProvider = cheapestA ? providers.find((p) => p.slug === cheapestA
       <CTA
         providerSlug={cheapestAProvider.slug}
         providerName={cheapestAProvider.name}
-        headline={`Rent ${gpuA.name} from ${formatPrice(cheapestA.price_usd_per_hour)}/hr`}
+        headline={`Rent ${gpuA.name} from ${formatPrice(cheapestA.price_usd_per_hour)}`}
         note={`${cheapestA.availability} · ${cheapestA.region}`}
       />
     </div>

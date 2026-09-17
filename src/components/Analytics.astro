@@ -1,0 +1,30 @@
+---
+/**
+ * First-party pageview beacon.
+ *
+ * Inline and roughly 300 bytes so it costs no request and cannot delay render;
+ * fires after load so it never competes with paint. Skipped on localhost so
+ * development traffic stays out of the numbers.
+ */
+interface Props {
+  /** GPU slug when the page is about one GPU, for per-GPU funnels. */
+  gpu?: string;
+}
+const { gpu } = Astro.props;
+---
+
+<script is:inline define:vars={{ gpu }}>
+  if (location.hostname !== 'localhost' && navigator.sendBeacon) {
+    addEventListener('load', () => {
+      try {
+        navigator.sendBeacon(
+          '/api/event',
+          new Blob(
+            [JSON.stringify({ path: location.pathname, gpu: gpu || null, ref: document.referrer || null })],
+            { type: 'application/json' }
+          )
+        );
+      } catch {}
+    }, { once: true });
+  }
+</script>

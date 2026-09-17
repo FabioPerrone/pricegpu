@@ -7,10 +7,11 @@ interface Props {
   headline?: string;
   note?: string;
   variant?: 'banner' | 'inline';
+  gpu?: string;
 }
 
-const { providerSlug, providerName, headline, note, variant = 'banner' } = Astro.props;
-const url = buildAffiliateUrl(providerSlug);
+const { providerSlug, providerName, headline, note, variant = 'banner', gpu } = Astro.props;
+const url = buildAffiliateUrl(providerSlug, { from: Astro.url.pathname, gpu });
 ---
 
 {variant === 'banner' ? (

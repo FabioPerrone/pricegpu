@@ -2,26 +2,39 @@
 import Layout from '../layouts/Layout.astro';
 import CTA from '../components/CTA.astro';
 import {
-  getGPUs, getProviders, getAllPrices, getCheapestForGPU, formatPrice,
+  getGPUs, getProviders, getAllPrices, getCheapestForGPU, formatPrice, getLastScrapeDate,
 } from '../lib/pricing.ts';
+import { buildAffiliateUrl, AFFILIATE_DISCLAIMER } from '../lib/affiliate.ts';
 import { buildTitle, buildDescription, buildCanonical, buildWebSiteSchema } from '../lib/seo.ts';
 
 const gpus = getGPUs();
 const providers = getProviders();
 const allPrices = getAllPrices();
 
+// Only GPUs we can actually quote. A row reading "—" for both price and
+// provider tells a visitor nothing and cannot be acted on.
 const popularGPUs = [
-  'h100-80gb-sxm', 'a100-80gb-sxm', 'rtx-4090', 'l40s', 'a10', 'l4', 't4', 'h200-sxm',
-].map((slug) => {
-  const gpu = gpus.find((g) => g.slug === slug);
-  if (!gpu) return null;
-  const cheapest = getCheapestForGPU(slug);
-  return { gpu, cheapest };
-}).filter(Boolean);
+  'h100-sxm', 'a100-80gb-sxm', 'rtx-4090', 'l40s', 'a100-80gb-pcie', 'a10', 'l4', 't4',
+]
+  .map((slug) => {
+    const gpu = gpus.find((g) => g.slug === slug);
+    const cheapest = gpu ? getCheapestForGPU(slug) : null;
+    return gpu && cheapest ? { gpu, cheapest } : null;
+  })
+  .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+
+const pricedGpuCount = gpus.filter((g) => getCheapestForGPU(g.slug)).length;
+
+const scrapeTimes = providers
+  .map((p) => getLastScrapeDate(p.slug))
+  .filter(Boolean)
+  .map((iso) => new Date(iso).getTime())
+  .filter((t) => Number.isFinite(t));
+const lastUpdated = scrapeTimes.length ? new Date(Math.max(...scrapeTimes)) : null;
 
 const title = buildTitle(['Live Cloud GPU Pricing', 'PriceGPU']);
 const description = buildDescription(
-  'Compare GPU cloud rental prices across RunPod, Vast.ai, Lambda Labs, and 12 more providers. Updated weekly. Free, no signup required.'
+  'Compare GPU cloud rental prices across RunPod, Vast.ai, Lambda Labs, and 12 more providers. Updated daily. Free, no signup required.'
 );
 const canonical = buildCanonical('/');
 
@@ -40,51 +53,74 @@ const schemas = [
     <div class="wordmark" style="font-size: 2.5rem; margin-bottom: 0.75rem; display: block;">
       <span class="chevron" style="font-size: 2.5rem;">›</span>pricegpu
     </div>
-    <p style="font-size: 1.1rem; color: var(--text-muted); max-width: 500px; margin: 0 auto 2rem;">
-      Live cloud GPU pricing across every major provider.<br />
-      <span style="font-size: 0.9rem;">{providers.length} providers · {gpus.length} GPU models · updated weekly</span>
+    <h1 style="font-size: 1.35rem; font-weight: 600; max-width: 32ch; margin: 0 auto 0.75rem; line-height: 1.35;">
+      The same GPU costs 3× more depending on who you rent it from.
+    </h1>
+    <p style="font-size: 1rem; color: var(--text-muted); max-width: 46ch; margin: 0 auto 1.75rem;">
+      Every price from {providers.length} cloud providers, in one table. No signup, no sales calls.
     </p>
     <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-      <a href="/gpu/h100-80gb-sxm" class="btn-primary">Compare H100 Prices →</a>
-      <a href="/api/prices.json" style="display:inline-flex;align-items:center;gap:0.4rem;border:1px solid var(--border);padding:0.6rem 1.2rem;border-radius:4px;font-size:0.9rem;color:var(--text-muted);">Public API</a>
+      <a href="/gpu/h100-sxm" class="btn-primary">Compare H100 prices →</a>
+      <a href="/api/prices.json" style="display:inline-flex;align-items:center;gap:0.4rem;border:1px solid var(--border);padding:0.6rem 1.2rem;border-radius:4px;font-size:0.9rem;color:var(--text-muted);text-decoration:none;">Free API</a>
     </div>
+    <p class="mono" style="font-size: 0.78rem; color: var(--text-dim); margin-top: 1.25rem;">
+      {pricedGpuCount} GPU models priced · {allPrices.length} live offers
+      {lastUpdated && <> · updated {lastUpdated.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</>}
+    </p>
   </div>
 
   <section style="margin-top: 2.5rem;">
-    <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 1rem;">
-      <h2 style="font-size: 1.1rem;">Popular GPUs — Cheapest Price</h2>
-      <a href="/gpu" style="font-size: 0.85rem; color: var(--text-muted);">See all {gpus.length} GPUs →</a>
+    <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.6rem; gap: 1rem; flex-wrap: wrap;">
+      <h2 style="font-size: 1.1rem;">Cheapest price per GPU</h2>
+      <a href="/gpu" style="font-size: 0.85rem; color: var(--text-muted);">All {gpus.length} GPUs →</a>
     </div>
-    <div class="card" style="padding: 0; overflow: hidden;">
+    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+      {AFFILIATE_DISCLAIMER} <a href="/disclosure" style="color: var(--text-muted);">Details</a>.
+    </p>
+    <div class="card table-scroll" style="padding: 0;">
       <table>
         <thead>
           <tr>
             <th scope="col">GPU</th>
             <th scope="col">VRAM</th>
-            <th scope="col">FP16 TFLOPS</th>
-            <th scope="col">Cheapest/hr</th>
+            <th scope="col">FP16</th>
+            <th scope="col">Cheapest</th>
             <th scope="col">Provider</th>
-            <th scope="col"></th>
+            <th scope="col"><span class="sr-only">Rent</span></th>
           </tr>
         </thead>
         <tbody>
-          {popularGPUs.map(({ gpu, cheapest }) => {
-            const provider = cheapest ? providers.find((p) => p.slug === cheapest.provider_slug) : null;
+          {popularGPUs.map(({ gpu, cheapest }, i) => {
+            const provider = providers.find((p) => p.slug === cheapest.provider_slug);
             return (
               <tr>
                 <td><a href={`/gpu/${gpu.slug}`} style="font-weight: 600;">{gpu.name}</a></td>
                 <td style="color:var(--text-muted);">{gpu.vram_gb} GB</td>
                 <td style="color:var(--text-muted);">{gpu.fp16_tflops}</td>
-                <td>
-                  {cheapest
-                    ? <strong class="accent">{formatPrice(cheapest.price_usd_per_hour)}</strong>
-                    : <span style="color:var(--text-dim);">—</span>}
-                </td>
+                <td><strong class="accent">{formatPrice(cheapest.price_usd_per_hour)}</strong></td>
                 <td style="color:var(--text-muted);">
-                  {provider ? <a href={`/provider/${provider.slug}`} style="color:var(--text-muted);">{provider.name}</a> : '—'}
+                  {provider
+                    ? <a href={`/provider/${provider.slug}`} style="color:var(--text-muted);">{provider.name}</a>
+                    : cheapest.provider_slug}
                 </td>
-                <td>
-                  <a href={`/gpu/${gpu.slug}`} style="font-size:0.8rem;color:var(--text-muted);">Details →</a>
+                <td style="text-align: right; white-space: nowrap;">
+                  <a href={`/gpu/${gpu.slug}`} style="font-size:0.78rem;color:var(--text-muted);margin-right:0.6rem;">
+                    all prices
+                  </a>
+                  <a
+                    href={buildAffiliateUrl(cheapest.provider_slug, {
+                      from: Astro.url.pathname,
+                      gpu: gpu.slug,
+                      position: i + 1,
+                      price: cheapest.price_usd_per_hour,
+                    })}
+                    rel="sponsored noopener"
+                    target="_blank"
+                    class="btn-primary"
+                    style="padding: 0.3rem 0.75rem; font-size: 0.8rem;"
+                  >
+                    Rent →
+                  </a>
                 </td>
               </tr>
             );
@@ -113,11 +149,11 @@ const schemas = [
   <section style="margin-top: 2.5rem;">
     <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">Popular Comparisons</h2>
     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.75rem;">
-      <a href="/compare/runpod-vs-vast" class="card" style="text-decoration: none;">
+      <a href="/compare/runpod-vs-vast-ai" class="card" style="text-decoration: none;">
         <div style="font-weight: 600;">RunPod vs Vast.ai</div>
         <div style="font-size: 0.8rem; color: var(--text-muted);">Most popular comparison</div>
       </a>
-      <a href="/gpu-compare/h100-80gb-sxm-vs-a100-80gb-sxm" class="card" style="text-decoration: none;">
+      <a href="/gpu-compare/h100-sxm-vs-a100-80gb-sxm" class="card" style="text-decoration: none;">
         <div style="font-weight: 600;">H100 vs A100</div>
         <div style="font-size: 0.8rem; color: var(--text-muted);">When the upgrade pays off</div>
       </a>
@@ -133,7 +169,7 @@ const schemas = [
         <div style="font-weight: 600;">Cheapest RTX 4090 for SDXL</div>
         <div style="font-size: 0.8rem; color: var(--text-muted);">24GB VRAM, best $/image</div>
       </a>
-      <a href="/compare/lambda-vs-runpod" class="card" style="text-decoration: none;">
+      <a href="/compare/runpod-vs-lambda-labs" class="card" style="text-decoration: none;">
         <div style="font-weight: 600;">Lambda vs RunPod</div>
         <div style="font-size: 0.8rem; color: var(--text-muted);">H100 and A100 pricing</div>
       </a>
@@ -143,7 +179,7 @@ const schemas = [
   <section style="margin-top: 2.5rem; padding: 1.5rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px;">
     <h2 style="font-size: 1.1rem; margin-bottom: 0.75rem;">Public Pricing API</h2>
     <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
-      All pricing data is freely available at <code>/api/prices.json</code>. No auth required. Updated weekly.
+      All pricing data is freely available at <code>/api/prices.json</code>. No auth required. Updated daily.
     </p>
     <a href="/api/prices.json" style="font-family: monospace; font-size: 0.85rem; color: var(--accent);">
       GET https://pricegpu.com/api/prices.json →
