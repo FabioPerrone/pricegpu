@@ -4,6 +4,7 @@ import PriceTable from '../../components/PriceTable.astro';
 import ComparisonTable from '../../components/ComparisonTable.astro';
 import CTA from '../../components/CTA.astro';
 import RelatedPages from '../../components/RelatedPages.astro';
+import { comparePath } from '../../lib/links.ts';
 import {
   getProviders, getGPUs, getAllPrices, formatPrice, getLastScrapeDate,
 } from '../../lib/pricing.ts';
@@ -53,7 +54,7 @@ const title = buildTitle([`${providerA.name} vs ${providerB.name}`, 'GPU Cloud C
 const description = buildDescription(
   `${providerA.name} vs ${providerB.name}: side-by-side GPU pricing, features, and regions. ${cheaperProvider ? `${cheaperProvider.name} offers lower entry pricing.` : ''} Updated weekly.`
 );
-const canonical = buildCanonical(`/compare/${providerA.slug}-vs-${providerB.slug}`);
+const canonical = buildCanonical(comparePath(providerA.slug, providerB.slug));
 
 const faqs = [
   {
@@ -98,7 +99,7 @@ const relatedLinks = [
   { title: `${providerB.name} pricing`, url: `/provider/${providerB.slug}`, description: providerB.description },
   { title: `${providerA.name} alternatives`, url: `/${providerA.slug}/alternatives`, description: `Providers similar to ${providerA.name}` },
   { title: `${providerB.name} alternatives`, url: `/${providerB.slug}/alternatives`, description: `Providers similar to ${providerB.name}` },
-  ...otherProviders.map((p) => ({ title: `${providerA.name} vs ${p.name}`, url: `/compare/${providerA.slug}-vs-${p.slug}`, description: undefined })),
+  ...otherProviders.map((p) => ({ title: `${providerA.name} vs ${p.name}`, url: comparePath(providerA.slug, p.slug), description: undefined })),
 ];
 ---
 

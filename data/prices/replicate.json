@@ -3,7 +3,7 @@
   "scraper_version": "1.0.0",
   "items": [
     {
-      "gpu_slug": "h100-80gb-sxm",
+      "gpu_slug": "h100-sxm",
       "configuration": "Nvidia H100 (80GB)",
       "price_usd_per_hour": 4.85,
       "billing": "per-second",
@@ -23,7 +23,7 @@
     {
       "gpu_slug": "a100-40gb-pcie",
       "configuration": "Nvidia A100 (40GB)",
-      "price_usd_per_hour": 2.30,
+      "price_usd_per_hour": 2.3,
       "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",
@@ -32,7 +32,7 @@
     {
       "gpu_slug": "rtx-4090",
       "configuration": "Nvidia RTX 4090 (24GB)",
-      "price_usd_per_hour": 1.00,
+      "price_usd_per_hour": 1.0,
       "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",

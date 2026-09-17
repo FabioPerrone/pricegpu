@@ -3,7 +3,7 @@
   "scraper_version": "1.0.0",
   "items": [
     {
-      "gpu_slug": "h100-80gb-pcie",
+      "gpu_slug": "h100-pcie",
       "configuration": "1x H100 PCIe",
       "price_usd_per_hour": 2.49,
       "billing": "per-minute",

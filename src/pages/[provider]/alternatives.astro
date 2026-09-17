@@ -2,6 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import CTA from '../../components/CTA.astro';
 import RelatedPages from '../../components/RelatedPages.astro';
+import { comparePath } from '../../lib/links.ts';
 import {
   getProviders, getProviderPrices, formatPrice, getRelatedProviders,
 } from '../../lib/pricing.ts';
@@ -59,7 +60,7 @@ const relatedLinks = [
   { title: `${provider.name} pricing`, url: `/provider/${provider.slug}`, description: provider.description },
   ...related.map((p) => ({
     title: `${provider.name} vs ${p.name}`,
-    url: `/compare/${provider.slug}-vs-${p.slug}`,
+    url: comparePath(provider.slug, p.slug),
     description: `Side-by-side comparison`,
   })),
 ];
@@ -102,7 +103,7 @@ const relatedLinks = [
             </div>
           </div>
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <a href={`/compare/${provider.slug}-vs-${alt.slug}`} class="btn-primary" style="background: var(--bg-card); color: var(--text); border: 1px solid var(--border); font-size: 0.8rem; padding: 0.35rem 0.8rem;">Compare →</a>
+            <a href={comparePath(provider.slug, alt.slug)} class="btn-primary" style="background: var(--bg-card); color: var(--text); border: 1px solid var(--border); font-size: 0.8rem; padding: 0.35rem 0.8rem;">Compare →</a>
             <CTA providerSlug={alt.slug} providerName={alt.name} variant="inline" />
           </div>
         </div>

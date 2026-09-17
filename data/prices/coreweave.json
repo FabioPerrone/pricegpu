@@ -3,7 +3,7 @@
   "scraper_version": "1.0.0",
   "items": [
     {
-      "gpu_slug": "h100-80gb-sxm",
+      "gpu_slug": "h100-sxm",
       "configuration": "1x H100 SXM5",
       "price_usd_per_hour": 2.95,
       "billing": "per-second",
@@ -12,7 +12,7 @@
       "deal_url": "https://www.coreweave.com/gpu-cloud-computing"
     },
     {
-      "gpu_slug": "h100-80gb-pcie",
+      "gpu_slug": "h100-pcie",
       "configuration": "1x H100 PCIe",
       "price_usd_per_hour": 2.65,
       "billing": "per-second",
@@ -41,7 +41,7 @@
     {
       "gpu_slug": "v100-16gb",
       "configuration": "1x V100 FHHL 16GB",
-      "price_usd_per_hour": 0.80,
+      "price_usd_per_hour": 0.8,
       "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",

@@ -3,7 +3,7 @@
   "scraper_version": "1.0.0",
   "items": [
     {
-      "gpu_slug": "h100-80gb-sxm",
+      "gpu_slug": "h100-sxm",
       "configuration": "1x H100 SXM",
       "price_usd_per_hour": 3.99,
       "billing": "per-millisecond",

@@ -3,7 +3,7 @@
   "scraper_version": "1.0.0",
   "items": [
     {
-      "gpu_slug": "h100-80gb-sxm",
+      "gpu_slug": "h100-sxm",
       "configuration": "1x H100 SXM",
       "price_usd_per_hour": 2.69,
       "billing": "per-minute",
@@ -12,7 +12,7 @@
       "deal_url": "https://www.genesiscloud.com/pricing"
     },
     {
-      "gpu_slug": "h100-80gb-pcie",
+      "gpu_slug": "h100-pcie",
       "configuration": "1x H100 NVL",
       "price_usd_per_hour": 2.35,
       "billing": "per-minute",

@@ -11,7 +11,7 @@ const providers = getProviders();
 const allPrices = getAllPrices();
 
 const popularGPUs = [
-  'h100-80gb-sxm', 'a100-80gb-sxm', 'rtx-4090', 'l40s', 'a10', 'l4', 't4', 'h200-sxm',
+  'h100-sxm', 'a100-80gb-sxm', 'rtx-4090', 'l40s', 'a10', 'l4', 't4', 'h200-sxm',
 ].map((slug) => {
   const gpu = gpus.find((g) => g.slug === slug);
   if (!gpu) return null;
@@ -45,7 +45,7 @@ const schemas = [
       <span style="font-size: 0.9rem;">{providers.length} providers · {gpus.length} GPU models · updated weekly</span>
     </p>
     <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-      <a href="/gpu/h100-80gb-sxm" class="btn-primary">Compare H100 Prices →</a>
+      <a href="/gpu/h100-sxm" class="btn-primary">Compare H100 Prices →</a>
       <a href="/api/prices.json" style="display:inline-flex;align-items:center;gap:0.4rem;border:1px solid var(--border);padding:0.6rem 1.2rem;border-radius:4px;font-size:0.9rem;color:var(--text-muted);">Public API</a>
     </div>
   </div>
@@ -113,11 +113,11 @@ const schemas = [
   <section style="margin-top: 2.5rem;">
     <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">Popular Comparisons</h2>
     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.75rem;">
-      <a href="/compare/runpod-vs-vast" class="card" style="text-decoration: none;">
+      <a href="/compare/runpod-vs-vast-ai" class="card" style="text-decoration: none;">
         <div style="font-weight: 600;">RunPod vs Vast.ai</div>
         <div style="font-size: 0.8rem; color: var(--text-muted);">Most popular comparison</div>
       </a>
-      <a href="/gpu-compare/h100-80gb-sxm-vs-a100-80gb-sxm" class="card" style="text-decoration: none;">
+      <a href="/gpu-compare/h100-sxm-vs-a100-80gb-sxm" class="card" style="text-decoration: none;">
         <div style="font-weight: 600;">H100 vs A100</div>
         <div style="font-size: 0.8rem; color: var(--text-muted);">When the upgrade pays off</div>
       </a>
@@ -133,7 +133,7 @@ const schemas = [
         <div style="font-weight: 600;">Cheapest RTX 4090 for SDXL</div>
         <div style="font-size: 0.8rem; color: var(--text-muted);">24GB VRAM, best $/image</div>
       </a>
-      <a href="/compare/lambda-vs-runpod" class="card" style="text-decoration: none;">
+      <a href="/compare/runpod-vs-lambda-labs" class="card" style="text-decoration: none;">
         <div style="font-weight: 600;">Lambda vs RunPod</div>
         <div style="font-size: 0.8rem; color: var(--text-muted);">H100 and A100 pricing</div>
       </a>

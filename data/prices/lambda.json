@@ -3,7 +3,7 @@
   "scraper_version": "1.0.0",
   "items": [
     {
-      "gpu_slug": "h100-80gb-sxm",
+      "gpu_slug": "h100-sxm",
       "configuration": "1x H100 SXM",
       "price_usd_per_hour": 2.49,
       "billing": "per-minute",
@@ -12,7 +12,7 @@
       "deal_url": "https://lambdalabs.com/service/gpu-cloud"
     },
     {
-      "gpu_slug": "h100-80gb-sxm",
+      "gpu_slug": "h100-sxm",
       "configuration": "8x H100 SXM",
       "price_usd_per_hour": 19.92,
       "billing": "per-minute",
@@ -59,7 +59,7 @@
     {
       "gpu_slug": "a10",
       "configuration": "8x A10",
-      "price_usd_per_hour": 6.00,
+      "price_usd_per_hour": 6.0,
       "billing": "per-minute",
       "availability": "on-demand",
       "region": "us-west-3",

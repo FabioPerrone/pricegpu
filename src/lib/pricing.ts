@@ -83,7 +83,50 @@ export function getUseCases(): UseCase[] {
 }
 
 export function getProviderPrices(slug: string): ProviderPrices | null {
-  return readJSON<ProviderPrices>(path.join(DATA_DIR, `prices/${slug}.json`));
+  return readJSON<ProviderPrices>(path.join(DATA_DIR, `prices/${priceFileForProvider(slug)}.json`));
+}
+
+/**
+ * Price files are named after the scraper, which predates the canonical
+ * provider slugs in providers.json. Left unmapped, a price row carries a
+ * provider_slug that matches no provider, so its /go/<slug> affiliate link
+ * 404s and its provider name renders as "—". Keep this in sync with
+ * data/prices/*.json; scripts/audit-affiliates.ts fails the build on a gap.
+ */
+const PRICE_FILE_TO_PROVIDER: Record<string, string> = {
+  vast: 'vast-ai',
+  lambda: 'lambda-labs',
+  fal: 'fal-ai',
+  genesis: 'genesis-cloud',
+  together: 'together-ai',
+};
+
+/**
+ * Scrapers historically emitted VRAM-qualified GPU slugs that gpus.json never
+ * used. A price row under an unknown gpu_slug is invisible: it never reaches
+ * the GPU page it belongs to. data/prices is normalized on write, so this is a
+ * safety net for a scraper that has not caught up.
+ */
+const GPU_SLUG_ALIASES: Record<string, string> = {
+  'h100-80gb-sxm': 'h100-sxm',
+  'h100-80gb-pcie': 'h100-pcie',
+  'v100-16gb-sxm2': 'v100-16gb',
+};
+
+/** Canonical gpus.json slug for a gpu_slug found in price data. */
+export function resolveGpuSlug(gpuSlug: string): string {
+  return GPU_SLUG_ALIASES[gpuSlug] ?? gpuSlug;
+}
+
+/** Canonical providers.json slug for a data/prices/<file>.json basename. */
+export function resolveProviderSlug(priceFileName: string): string {
+  return PRICE_FILE_TO_PROVIDER[priceFileName] ?? priceFileName;
+}
+
+/** Inverse of resolveProviderSlug — the price file backing a provider. */
+export function priceFileForProvider(providerSlug: string): string {
+  const alias = Object.entries(PRICE_FILE_TO_PROVIDER).find(([, s]) => s === providerSlug);
+  return alias ? alias[0] : providerSlug;
 }
 
 export function getAllPrices(): Array<PriceItem & { provider_slug: string }> {
@@ -97,11 +140,11 @@ export function getAllPrices(): Array<PriceItem & { provider_slug: string }> {
 
   const result: Array<PriceItem & { provider_slug: string }> = [];
   for (const file of files) {
-    const slug = file.replace(/\.json$/, '');
+    const slug = resolveProviderSlug(file.replace(/\.json$/, ''));
     const data = readJSON<ProviderPrices>(path.join(pricesDir, file));
     if (!data) continue;
     for (const item of data.items) {
-      result.push({ ...item, provider_slug: slug });
+      result.push({ ...item, gpu_slug: resolveGpuSlug(item.gpu_slug), provider_slug: slug });
     }
   }
   return result;
