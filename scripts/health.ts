@@ -8,7 +8,7 @@
  * a provider's traffic earns nothing. None of that shows up in pageviews.
  * --strict exits non-zero when something is actually broken, for CI.
  */
-import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 const DATA = path.resolve('data');
@@ -77,6 +77,8 @@ const report = {
     orphanedGpuSlugs: orphanedRows,
   },
 };
+
+writeFileSync(path.join(DATA, 'health.json'), JSON.stringify(report, null, 2) + '\n');
 
 if (asJson) {
   console.log(JSON.stringify(report, null, 2));
