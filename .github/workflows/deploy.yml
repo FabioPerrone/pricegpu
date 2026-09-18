@@ -40,16 +40,21 @@ jobs:
         run: |
           # GET, not HEAD: assert what a visitor actually gets. onRequestGet
           # does not answer HEAD, so a HEAD check tests the wrong contract.
+          # The trailing newline matters: without it `read` hits EOF and
+          # returns non-zero, which under `bash -e` aborts the step before a
+          # single assertion runs — the whole check reported failure in 250ms
+          # having tested nothing. `|| true` keeps that from ever being fatal
+          # again, since a failed read is not a failed redirect.
           check() {
             curl -s -o /dev/null --max-redirs 0 --max-time 20 \
-                 -w '%{http_code} %{redirect_url}' "https://pricegpu.com/go/$1"
+                 -w '%{http_code} %{redirect_url}\n' "https://pricegpu.com/go/$1"
           }
 
           # A new deployment takes a little while to reach the custom domain,
           # and a fixed sleep either flakes or wastes time. Poll instead, so
           # a failure here means the redirect is broken rather than slow.
           for attempt in 1 2 3 4 5 6; do
-            read -r status location < <(check runpod)
+            read -r status location < <(check runpod) || true
             [ "$status" = "302" ] && [ -n "$location" ] && break
             echo "attempt $attempt: /go/runpod -> ${status:-000}, waiting for the deployment to go live"
             sleep 10
@@ -57,7 +62,7 @@ jobs:
 
           failed=0
           for slug in runpod vast-ai lambda-labs; do
-            read -r status location < <(check "$slug")
+            read -r status location < <(check "$slug") || true
             echo "GET /go/$slug -> ${status:-000} -> ${location:-<none>}"
             if [ "$status" != "302" ] || [ -z "$location" ]; then
               failed=1
