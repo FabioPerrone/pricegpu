@@ -92,6 +92,35 @@ if (existsSync(outputPath)) {
   process.exit(0);
 }
 
+/**
+ * Refuse to publish a market update from stale prices.
+ *
+ * The scrapers were dead for 141 days while this ran daily, so roughly four
+ * months of "market updates" reported the same frozen figures as current —
+ * "X retains its position as the cheapest provider at $Y/hr" was true in April
+ * and republished as news every day since. That is not thin content, it is a
+ * false claim about today's prices, and no amount of editing the prose fixes
+ * it. If the data is not fresh there is no news to report.
+ */
+const MAX_PRICE_AGE_DAYS = 3;
+const freshestScrape = readdirSync(PRICES_DIR)
+  .filter((f) => f.endsWith('.json'))
+  .map((f) => JSON.parse(readFileSync(path.join(PRICES_DIR, f), 'utf-8'))?.scraped_at)
+  .filter(Boolean)
+  .map((iso: string) => new Date(iso).getTime())
+  .filter((t) => Number.isFinite(t))
+  .reduce((a, b) => Math.max(a, b), 0);
+
+const priceAgeDays = freshestScrape ? (Date.now() - freshestScrape) / 86_400_000 : Infinity;
+if (priceAgeDays > MAX_PRICE_AGE_DAYS) {
+  console.error(
+    `Prices are ${Number.isFinite(priceAgeDays) ? priceAgeDays.toFixed(1) + ' days' : 'of unknown age'} old ` +
+      `(limit ${MAX_PRICE_AGE_DAYS}). Refusing to publish a market update from stale data — ` +
+      `fix the scrapers first.`
+  );
+  process.exit(1);
+}
+
 // ── Price data ────────────────────────────────────────────────────────────────
 
 interface PriceItem {
@@ -227,7 +256,8 @@ ARTICLE REQUIREMENTS:
 - Length: 480–560 words
 - Structure:
   1. Headline (no "##", just the text)
-  2. Dateline: "SAN FRANCISCO, ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase()} —"
+  2. No dateline. Do NOT open with a city name — this is compiled from
+     tracked pricing data, not filed from anywhere by a reporter.
   3. Lede: one sentence, the single most important fact
   4. Context paragraph: what's driving this / what it means for engineers
   5. Data paragraph: 2–3 specific price comparisons with provider names and figures
@@ -266,7 +296,8 @@ const body = lines.slice(1).join('\n\n').trim();
 
 // Build description from lede (first non-empty line after headline)
 const lede = lines.slice(1).find(l => l.trim().length > 40) ?? '';
-const description = lede.replace(/^SAN FRANCISCO.*?—\s*/i, '').slice(0, 160).trim();
+// Strips a dateline from older posts, and from a model that adds one anyway.
+const description = lede.replace(/^[A-Z][A-Z\s.,]{2,40},?\s+[A-Z]+\s+\d{1,2},\s*\d{4}\s*—\s*/i, '').slice(0, 160).trim();
 
 // Tags from GPUs mentioned
 const tags = ['gpu-pricing', 'cloud-gpu', 'market-update'];

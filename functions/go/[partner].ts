@@ -78,7 +78,13 @@ function logClick(context: EventContext<Env, string, unknown>, slug: string): vo
   context.waitUntil(insert.run().catch(() => {}));
 }
 
-export const onRequestGet: PagesFunction<Env> = async (context) => {
+/**
+ * Handles every method rather than GET alone. `onRequestGet` does not answer
+ * HEAD, and Pages does not fall back to the GET handler for it the way it does
+ * for a static file — so a HEAD request 404s. Link checkers, crawlers and
+ * previews all send HEAD, and a redirect is method-agnostic anyway.
+ */
+export const onRequest: PagesFunction<Env> = async (context) => {
   const slug = String(context.params.partner ?? '');
   const destination = destinationFor(slug, context.env);
 
@@ -86,7 +92,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     return Response.redirect(new URL('/404', context.request.url).toString(), 302);
   }
 
-  logClick(context, slug);
+  // A HEAD is a check, not a visitor, so it must not inflate click counts.
+  if (context.request.method === 'GET') logClick(context, slug);
 
   return new Response(null, {
     status: 302,

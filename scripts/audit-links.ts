@@ -24,15 +24,30 @@ function walk(dir: string, out: string[] = []): string[] {
 /**
  * Paths served by a Pages Function rather than a file on disk. Without this
  * the audit would report every affiliate redirect as broken.
+ *
+ * Derived from the functions/ directory, since Cloudflare generates the
+ * deployed _routes.json at publish time and it is not present in dist/.
+ * functions/go/[partner].ts serves /go/*, functions/api/alert.ts serves
+ * /api/alert, and so on.
  */
 const functionRoutes: string[] = (() => {
-  const routesFile = join(DIST, '_routes.json');
-  if (!existsSync(routesFile)) return [];
-  try {
-    return JSON.parse(readFileSync(routesFile, 'utf8')).include ?? [];
-  } catch {
-    return [];
-  }
+  const root = 'functions';
+  if (!existsSync(root)) return [];
+  const routes: string[] = [];
+  const walk = (dir: string, prefix: string) => {
+    for (const entry of readdirSync(dir)) {
+      const full = join(dir, entry);
+      if (statSync(full).isDirectory()) {
+        if (entry.startsWith('_')) continue;
+        walk(full, `${prefix}/${entry}`);
+      } else if (entry.endsWith('.ts') && !entry.startsWith('_')) {
+        const name = entry.replace(/\.ts$/, '');
+        routes.push(name.startsWith('[') ? `${prefix}/*` : `${prefix}/${name}`);
+      }
+    }
+  };
+  walk(root, '');
+  return routes;
 })();
 
 function servedByFunction(path: string): boolean {
