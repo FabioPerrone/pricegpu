@@ -2,6 +2,7 @@
 import fs from "fs";
 import path from "path";
 import {
+  dumpPageDiagnostics,
   launchBrowser,
   normalizeGpuSlug,
   saveProviderPrices,
@@ -96,6 +97,7 @@ export async function scrape(): Promise<PriceItem[]> {
       await page.screenshot({ path: path.join(screenshotDir, `${PROVIDER_SLUG}-${ts}.png`) });
       throw err;
     } finally {
+      if (items.length === 0) await dumpPageDiagnostics(page, PROVIDER_SLUG);
       await browser.close();
     }
 
