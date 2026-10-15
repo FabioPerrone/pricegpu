@@ -76,6 +76,20 @@ jobs:
             exit 1
           fi
 
+          # A redirect that works but carries no ref code is a free referral:
+          # the visitor reaches the merchant and the site earns nothing. The
+          # destination says which it is — a bare provider URL means the ref
+          # env var is unset in the Pages project. Warn rather than fail, so a
+          # missing code cannot block shipping, but never let it be silent.
+          for slug in runpod vast-ai lambda-labs; do
+            read -r status location < <(check "$slug") || true
+            case "$location" in
+              *ref*|*REF*|*partner*|*utm_*) ;;
+              "") ;;
+              *) echo "::warning::/go/$slug redirects to $location with no ref code — that click earns nothing. Set its *_REF variable in the Pages project." ;;
+            esac
+          done
+
           # A visitor page must still be a page — catches a routing change
           # that fixes the functions by swallowing the static site.
           home=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 https://pricegpu.com/)
