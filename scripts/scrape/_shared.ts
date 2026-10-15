@@ -294,8 +294,57 @@ export async function launchBrowser() {
  * every environment — so the run that fails is the run that has to collect the
  * evidence. Written to a directory CI uploads as an artifact.
  */
+interface DiagnosablePage {
+  title(): Promise<string>;
+  url(): string;
+  content(): Promise<string>;
+  screenshot(o: { path: string; fullPage?: boolean }): Promise<unknown>;
+  evaluate?<T>(fn: () => T): Promise<T>;
+}
+
+/**
+ * Finds the smallest elements on the page whose own text is a price, and
+ * reports their tag, classes and surrounding text.
+ *
+ * The saved HTML is the real evidence, but it lands in a CI artifact, and an
+ * artifact is only useful to someone who can download it. Printing the few
+ * lines that actually determine the selector puts the fix in the log, where
+ * it can be read from anywhere. "No table" says the old selector is dead;
+ * this says what to write instead.
+ */
+async function samplePriceElements(page: DiagnosablePage, providerSlug: string): Promise<void> {
+  if (!page.evaluate) return;
+  const samples = await page.evaluate(() => {
+    const PRICE = /\$\s?\d+(\.\d+)?/;
+    const out: { tag: string; cls: string; text: string; parent: string }[] = [];
+    for (const el of Array.from(document.querySelectorAll<HTMLElement>("body *"))) {
+      if (el.children.length) continue;           // leaf nodes only
+      const text = (el.textContent ?? "").trim();
+      if (!text || text.length > 40 || !PRICE.test(text)) continue;
+      const parent = el.parentElement;
+      out.push({
+        tag: el.tagName.toLowerCase(),
+        cls: (el.className || "").toString().slice(0, 80),
+        text,
+        parent: parent ? `${parent.tagName.toLowerCase()}.${(parent.className || "").toString().slice(0, 60)}` : "",
+      });
+      if (out.length >= 8) break;
+    }
+    return out;
+  });
+
+  if (!samples.length) {
+    console.error(`[${providerSlug}] no price-shaped text anywhere on the page — it may render prices only after interaction, or behind a paywall or bot check.`);
+    return;
+  }
+  console.error(`[${providerSlug}] price-shaped elements found (write the new selector from these):`);
+  for (const s of samples) {
+    console.error(`[${providerSlug}]   <${s.tag} class="${s.cls}"> "${s.text}"  inside ${s.parent}`);
+  }
+}
+
 export async function dumpPageDiagnostics(
-  page: { title(): Promise<string>; url(): string; content(): Promise<string>; screenshot(o: { path: string; fullPage?: boolean }): Promise<unknown> },
+  page: DiagnosablePage,
   providerSlug: string,
 ): Promise<void> {
   const dir = process.env.SCRAPE_DIAGNOSTICS_DIR ?? "scrape-diagnostics";
@@ -326,6 +375,12 @@ export async function dumpPageDiagnostics(
         `[${providerSlug}] diagnostics: "${title}" at ${url} — ` +
         `${html.length} bytes, ${tables} table(s), ${rows} row(s). Saved to ${dir}/${providerSlug}.{html,png}`
     );
+
+    // Only worth sampling when the page actually loaded; a dead URL or an
+    // unreachable host needs a new address, not a new selector.
+    if (!url.startsWith("chrome-error") && !/404|not found|page not found/i.test(title)) {
+      await samplePriceElements(page, providerSlug);
+    }
   } catch (err) {
     console.error(`[${providerSlug}] could not capture diagnostics:`, err);
   }
