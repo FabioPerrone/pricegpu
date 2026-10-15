@@ -1,42 +1,186 @@
 {
-  "scraped_at": "2026-04-29T03:00:00Z",
+  "scraped_at": "2026-10-15T20:20:05.741Z",
   "scraper_version": "1.0.0",
   "items": [
     {
-      "gpu_slug": "h100-sxm",
-      "configuration": "1x H100 SXM",
-      "price_usd_per_hour": 3.18,
-      "billing": "per-minute",
+      "gpu_slug": "a100-80gb-sxm",
+      "configuration": "1x A100-80G",
+      "price_usd_per_hour": 1.15,
+      "billing": "per-hour",
       "availability": "on-demand",
-      "region": "us-east",
-      "deal_url": "https://www.paperspace.com/gpu-cloud"
+      "region": "us-east-1",
+      "deal_url": "https://console.paperspace.com/"
     },
     {
       "gpu_slug": "a100-80gb-sxm",
-      "configuration": "1x A100 SXM",
-      "price_usd_per_hour": 2.3,
-      "billing": "per-minute",
+      "configuration": "1x A100-80G",
+      "price_usd_per_hour": 1.15,
+      "billing": "per-hour",
       "availability": "on-demand",
-      "region": "us-east",
-      "deal_url": "https://www.paperspace.com/gpu-cloud"
-    },
-    {
-      "gpu_slug": "a100-80gb-pcie",
-      "configuration": "1x A100 PCIe 80GB",
-      "price_usd_per_hour": 2.3,
-      "billing": "per-minute",
-      "availability": "on-demand",
-      "region": "us-east",
-      "deal_url": "https://www.paperspace.com/gpu-cloud"
+      "region": "us-east-1",
+      "deal_url": "https://console.paperspace.com/"
     },
     {
       "gpu_slug": "a6000",
-      "configuration": "1x RTX A6000",
-      "price_usd_per_hour": 1.22,
-      "billing": "per-minute",
+      "configuration": "1x A6000",
+      "price_usd_per_hour": 1.89,
+      "billing": "per-hour",
       "availability": "on-demand",
-      "region": "us-east",
-      "deal_url": "https://www.paperspace.com/gpu-cloud"
+      "region": "us-east-1",
+      "deal_url": "https://console.paperspace.com/"
+    },
+    {
+      "gpu_slug": "a6000",
+      "configuration": "1x A6000",
+      "price_usd_per_hour": 1.89,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-east-1",
+      "deal_url": "https://console.paperspace.com/"
+    },
+    {
+      "gpu_slug": "v100-16gb",
+      "configuration": "1x V100",
+      "price_usd_per_hour": 2.3,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-east-1",
+      "deal_url": "https://console.paperspace.com/"
+    },
+    {
+      "gpu_slug": "v100-16gb",
+      "configuration": "1x V100",
+      "price_usd_per_hour": 2.3,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-east-1",
+      "deal_url": "https://console.paperspace.com/"
+    },
+    {
+      "gpu_slug": "v100-16gb",
+      "configuration": "1x V100The most powerful GPU in the world with 112 TeraFLOPS",
+      "price_usd_per_hour": 0.51,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-east-1",
+      "deal_url": "https://console.paperspace.com/"
+    },
+    {
+      "gpu_slug": "v100-16gb",
+      "configuration": "1x V100The most powerful GPU in the world with 112 TeraFLOPS",
+      "price_usd_per_hour": 2.3,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-east-1",
+      "deal_url": "https://console.paperspace.com/"
+    },
+    {
+      "gpu_slug": "v100-16gb",
+      "configuration": "1x V100The most powerful GPU in the world with 112 TeraFLOPS",
+      "price_usd_per_hour": 2.3,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-east-1",
+      "deal_url": "https://console.paperspace.com/"
+    },
+    {
+      "gpu_slug": "v100-16gb",
+      "configuration": "1x V100",
+      "price_usd_per_hour": 1348,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-east-1",
+      "deal_url": "https://console.paperspace.com/"
+    },
+    {
+      "gpu_slug": "v100-16gb",
+      "configuration": "1x V100",
+      "price_usd_per_hour": 1348,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-east-1",
+      "deal_url": "https://console.paperspace.com/"
+    },
+    {
+      "gpu_slug": "a6000",
+      "configuration": "1x A6000",
+      "price_usd_per_hour": 1219,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-east-1",
+      "deal_url": "https://console.paperspace.com/"
+    },
+    {
+      "gpu_slug": "a6000",
+      "configuration": "1x A6000",
+      "price_usd_per_hour": 1219,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-east-1",
+      "deal_url": "https://console.paperspace.com/"
+    },
+    {
+      "gpu_slug": "a100-80gb-sxm",
+      "configuration": "1x A100",
+      "price_usd_per_hour": 1994,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-east-1",
+      "deal_url": "https://console.paperspace.com/"
+    },
+    {
+      "gpu_slug": "a100-80gb-sxm",
+      "configuration": "1x A100",
+      "price_usd_per_hour": 1994,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-east-1",
+      "deal_url": "https://console.paperspace.com/"
+    },
+    {
+      "gpu_slug": "h100-sxm",
+      "configuration": "1x H100",
+      "price_usd_per_hour": 1994,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-east-1",
+      "deal_url": "https://console.paperspace.com/"
+    },
+    {
+      "gpu_slug": "h100-sxm",
+      "configuration": "1x H100",
+      "price_usd_per_hour": 1994,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-east-1",
+      "deal_url": "https://console.paperspace.com/"
+    },
+    {
+      "gpu_slug": "v100-16gb",
+      "configuration": "1x V100The most powerful GPU in the world with 112 TeraFLOPS",
+      "price_usd_per_hour": 298,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-east-1",
+      "deal_url": "https://console.paperspace.com/"
+    },
+    {
+      "gpu_slug": "v100-16gb",
+      "configuration": "1x V100The most powerful GPU in the world with 112 TeraFLOPS",
+      "price_usd_per_hour": 1343,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-east-1",
+      "deal_url": "https://console.paperspace.com/"
+    },
+    {
+      "gpu_slug": "v100-16gb",
+      "configuration": "1x V100The most powerful GPU in the world with 112 TeraFLOPS",
+      "price_usd_per_hour": 1343,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-east-1",
+      "deal_url": "https://console.paperspace.com/"
     }
   ]
 }

@@ -1,42 +1,60 @@
 {
-  "scraped_at": "2026-04-29T03:00:00Z",
+  "scraped_at": "2026-10-15T20:22:03.544Z",
   "scraper_version": "1.0.0",
   "items": [
     {
+      "gpu_slug": "rtx-5090",
+      "configuration": "1x RTX 5090",
+      "price_usd_per_hour": 0.5,
+      "billing": "per-minute",
+      "availability": "spot",
+      "region": "us-east",
+      "deal_url": "https://portal.salad.com/"
+    },
+    {
       "gpu_slug": "rtx-4090",
       "configuration": "1x RTX 4090",
-      "price_usd_per_hour": 0.24,
+      "price_usd_per_hour": 0.33,
       "billing": "per-minute",
-      "availability": "on-demand",
-      "region": "distributed",
-      "deal_url": "https://salad.com/pricing"
+      "availability": "spot",
+      "region": "us-east",
+      "deal_url": "https://portal.salad.com/"
+    },
+    {
+      "gpu_slug": "rtx-5090",
+      "configuration": "1x RTX 5090 Laptop",
+      "price_usd_per_hour": 0.235,
+      "billing": "per-minute",
+      "availability": "spot",
+      "region": "us-east",
+      "deal_url": "https://portal.salad.com/"
     },
     {
       "gpu_slug": "rtx-4080",
       "configuration": "1x RTX 4080",
-      "price_usd_per_hour": 0.17,
+      "price_usd_per_hour": 0.23,
       "billing": "per-minute",
-      "availability": "on-demand",
-      "region": "distributed",
-      "deal_url": "https://salad.com/pricing"
+      "availability": "spot",
+      "region": "us-east",
+      "deal_url": "https://portal.salad.com/"
+    },
+    {
+      "gpu_slug": "rtx-3090",
+      "configuration": "1x RTX 3090 Ti",
+      "price_usd_per_hour": 0.19,
+      "billing": "per-minute",
+      "availability": "spot",
+      "region": "us-east",
+      "deal_url": "https://portal.salad.com/"
     },
     {
       "gpu_slug": "rtx-3090",
       "configuration": "1x RTX 3090",
-      "price_usd_per_hour": 0.13,
+      "price_usd_per_hour": 0.17,
       "billing": "per-minute",
-      "availability": "on-demand",
-      "region": "distributed",
-      "deal_url": "https://salad.com/pricing"
-    },
-    {
-      "gpu_slug": "a100-80gb-pcie",
-      "configuration": "1x A100 PCIe 80GB",
-      "price_usd_per_hour": 0.89,
-      "billing": "per-minute",
-      "availability": "on-demand",
-      "region": "distributed",
-      "deal_url": "https://salad.com/pricing"
+      "availability": "spot",
+      "region": "us-east",
+      "deal_url": "https://portal.salad.com/"
     }
   ]
 }

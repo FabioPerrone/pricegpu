@@ -1,11 +1,38 @@
 {
-  "scraped_at": "2026-04-29T03:00:00Z",
+  "scraped_at": "2026-10-15T20:18:58.987Z",
   "scraper_version": "1.0.0",
   "items": [
     {
-      "gpu_slug": "h100-sxm",
-      "configuration": "1x H100 SXM",
-      "price_usd_per_hour": 2.49,
+      "gpu_slug": "h200-sxm",
+      "configuration": "1x H200",
+      "price_usd_per_hour": 5.29,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://runpod.io/console/gpu-cloud"
+    },
+    {
+      "gpu_slug": "h200-sxm",
+      "configuration": "1x H200",
+      "price_usd_per_hour": 5.29,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://runpod.io/console/gpu-cloud"
+    },
+    {
+      "gpu_slug": "b200",
+      "configuration": "1x B200",
+      "price_usd_per_hour": 7.99,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://runpod.io/console/gpu-cloud"
+    },
+    {
+      "gpu_slug": "b200",
+      "configuration": "1x B200",
+      "price_usd_per_hour": 7.99,
       "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",
@@ -14,7 +41,61 @@
     {
       "gpu_slug": "h100-pcie",
       "configuration": "1x H100 PCIe",
-      "price_usd_per_hour": 1.99,
+      "price_usd_per_hour": 2.89,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://runpod.io/console/gpu-cloud"
+    },
+    {
+      "gpu_slug": "h100-pcie",
+      "configuration": "1x H100 PCIe",
+      "price_usd_per_hour": 2.89,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://runpod.io/console/gpu-cloud"
+    },
+    {
+      "gpu_slug": "h100-pcie",
+      "configuration": "1x H100 PCIe",
+      "price_usd_per_hour": 2.89,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://runpod.io/console/gpu-cloud"
+    },
+    {
+      "gpu_slug": "h100-sxm",
+      "configuration": "1x H100 SXM",
+      "price_usd_per_hour": 3.99,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://runpod.io/console/gpu-cloud"
+    },
+    {
+      "gpu_slug": "h100-sxm",
+      "configuration": "1x H100 SXM",
+      "price_usd_per_hour": 3.99,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://runpod.io/console/gpu-cloud"
+    },
+    {
+      "gpu_slug": "a100-40gb-pcie",
+      "configuration": "1x A100 PCIe",
+      "price_usd_per_hour": 1.79,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://runpod.io/console/gpu-cloud"
+    },
+    {
+      "gpu_slug": "a100-40gb-pcie",
+      "configuration": "1x A100 PCIe",
+      "price_usd_per_hour": 1.79,
       "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",
@@ -23,25 +104,16 @@
     {
       "gpu_slug": "a100-80gb-sxm",
       "configuration": "1x A100 SXM",
-      "price_usd_per_hour": 1.89,
+      "price_usd_per_hour": 1.79,
       "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",
       "deal_url": "https://runpod.io/console/gpu-cloud"
     },
     {
-      "gpu_slug": "a100-80gb-pcie",
-      "configuration": "1x A100 PCIe 80GB",
-      "price_usd_per_hour": 1.64,
-      "billing": "per-second",
-      "availability": "on-demand",
-      "region": "us-east",
-      "deal_url": "https://runpod.io/console/gpu-cloud"
-    },
-    {
-      "gpu_slug": "rtx-4090",
-      "configuration": "1x RTX 4090",
-      "price_usd_per_hour": 0.44,
+      "gpu_slug": "a100-80gb-sxm",
+      "configuration": "1x A100 SXM",
+      "price_usd_per_hour": 1.79,
       "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",
@@ -50,16 +122,34 @@
     {
       "gpu_slug": "l40s",
       "configuration": "1x L40S",
-      "price_usd_per_hour": 1.14,
+      "price_usd_per_hour": 1.09,
       "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",
       "deal_url": "https://runpod.io/console/gpu-cloud"
     },
     {
-      "gpu_slug": "rtx-3090",
-      "configuration": "1x RTX 3090",
-      "price_usd_per_hour": 0.29,
+      "gpu_slug": "l40s",
+      "configuration": "1x L40S",
+      "price_usd_per_hour": 1.09,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://runpod.io/console/gpu-cloud"
+    },
+    {
+      "gpu_slug": "rtx-6000-ada",
+      "configuration": "1x RTX 6000 Ada",
+      "price_usd_per_hour": 0.99,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://runpod.io/console/gpu-cloud"
+    },
+    {
+      "gpu_slug": "rtx-6000-ada",
+      "configuration": "1x RTX 6000 Ada",
+      "price_usd_per_hour": 0.99,
       "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",
@@ -69,6 +159,132 @@
       "gpu_slug": "a40",
       "configuration": "1x A40",
       "price_usd_per_hour": 0.59,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://runpod.io/console/gpu-cloud"
+    },
+    {
+      "gpu_slug": "a40",
+      "configuration": "1x A40",
+      "price_usd_per_hour": 0.59,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://runpod.io/console/gpu-cloud"
+    },
+    {
+      "gpu_slug": "l40",
+      "configuration": "1x L40",
+      "price_usd_per_hour": 0.82,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://runpod.io/console/gpu-cloud"
+    },
+    {
+      "gpu_slug": "l40",
+      "configuration": "1x L40",
+      "price_usd_per_hour": 0.82,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://runpod.io/console/gpu-cloud"
+    },
+    {
+      "gpu_slug": "a6000",
+      "configuration": "1x RTX A6000",
+      "price_usd_per_hour": 0.59,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://runpod.io/console/gpu-cloud"
+    },
+    {
+      "gpu_slug": "a6000",
+      "configuration": "1x RTX A6000",
+      "price_usd_per_hour": 0.59,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://runpod.io/console/gpu-cloud"
+    },
+    {
+      "gpu_slug": "rtx-5090",
+      "configuration": "1x RTX 5090",
+      "price_usd_per_hour": 1.19,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://runpod.io/console/gpu-cloud"
+    },
+    {
+      "gpu_slug": "rtx-5090",
+      "configuration": "1x RTX 5090",
+      "price_usd_per_hour": 1.19,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://runpod.io/console/gpu-cloud"
+    },
+    {
+      "gpu_slug": "rtx-5090",
+      "configuration": "1x RTX 5090",
+      "price_usd_per_hour": 1.19,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://runpod.io/console/gpu-cloud"
+    },
+    {
+      "gpu_slug": "l4",
+      "configuration": "1x L4",
+      "price_usd_per_hour": 0.59,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://runpod.io/console/gpu-cloud"
+    },
+    {
+      "gpu_slug": "l4",
+      "configuration": "1x L4",
+      "price_usd_per_hour": 0.59,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://runpod.io/console/gpu-cloud"
+    },
+    {
+      "gpu_slug": "rtx-3090",
+      "configuration": "1x RTX 3090",
+      "price_usd_per_hour": 0.5,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://runpod.io/console/gpu-cloud"
+    },
+    {
+      "gpu_slug": "rtx-3090",
+      "configuration": "1x RTX 3090",
+      "price_usd_per_hour": 0.5,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://runpod.io/console/gpu-cloud"
+    },
+    {
+      "gpu_slug": "rtx-4090",
+      "configuration": "1x RTX 4090",
+      "price_usd_per_hour": 0.89,
+      "billing": "per-second",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://runpod.io/console/gpu-cloud"
+    },
+    {
+      "gpu_slug": "rtx-4090",
+      "configuration": "1x RTX 4090",
+      "price_usd_per_hour": 0.89,
       "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",
