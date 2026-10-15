@@ -411,36 +411,44 @@ export interface PriceBlock {
  * working scraper exact and a broken one alive.
  */
 export async function extractPriceBlocks(
-  page: { evaluate?<T>(fn: () => T): Promise<T> },
+  page: { evaluate?<R, A>(fn: (arg: A) => R, arg: A): Promise<R> },
   gpuHints: string[],
 ): Promise<PriceBlock[]> {
   if (!page.evaluate) return [];
-  return page.evaluate(new Function("hints", `
-    const PRICE = /\\$\\s?(\\d+(?:[.,]\\d+)?)/g;
-    const hintRe = new RegExp("(" + hints.join("|") + ")", "i");
-    const holds = (el) => {
-      const t = (el.textContent || "").trim();
-      return t.length > 0 && t.length < 400 && /\\$\\s?\\d/.test(t) && hintRe.test(t);
-    };
-    const out = [];
-    const seen = new Set();
-    for (const el of Array.from(document.querySelectorAll("body *"))) {
-      if (!holds(el)) continue;
-      // Keep only the smallest such element: if a descendant also qualifies,
-      // this one is a container and its text would merge several offers.
-      if (Array.from(el.children).some(holds)) continue;
-      const text = (el.textContent || "").replace(/\\s+/g, " ").trim();
-      if (seen.has(text)) continue;
-      seen.add(text);
-      const prices = [];
-      let m;
-      PRICE.lastIndex = 0;
-      while ((m = PRICE.exec(text)) !== null) prices.push(parseFloat(m[1].replace(",", ".")));
-      if (prices.length) out.push({ text, prices });
-      if (out.length >= 200) break;
-    }
-    return out;
-  `) as unknown as () => PriceBlock[]);
+  try {
+    return await page.evaluate((hints: string[]) => {
+      const hintRe = new RegExp("(" + hints.join("|") + ")", "i");
+      const holds = (el: Element): boolean => {
+        const t = (el.textContent ?? "").trim();
+        return t.length > 0 && t.length < 400 && /\$\s?\d/.test(t) && hintRe.test(t);
+      };
+      const out: { text: string; prices: number[] }[] = [];
+      const seen = new Set<string>();
+      for (const el of Array.from(document.querySelectorAll("body *"))) {
+        if (!holds(el)) continue;
+        // Keep only the smallest such element: if a descendant also qualifies,
+        // this one is a container and its text would merge several offers.
+        if (Array.from(el.children).some(holds)) continue;
+        const text = (el.textContent ?? "").replace(/\s+/g, " ").trim();
+        if (seen.has(text)) continue;
+        seen.add(text);
+        const prices: number[] = [];
+        const re = /\$\s?(\d+(?:[.,]\d+)?)/g;
+        let m: RegExpExecArray | null;
+        while ((m = re.exec(text)) !== null) prices.push(parseFloat(m[1].replace(",", ".")));
+        if (prices.length) out.push({ text, prices });
+        if (out.length >= 200) break;
+      }
+      return out;
+    }, gpuHints);
+  } catch (err) {
+    // A recovery path must never break what it is recovering. An earlier
+    // version threw here, inside the caller's finally block, which masked the
+    // real failure and skipped the diagnostics capture entirely — leaving the
+    // run with neither prices nor any evidence of why.
+    console.error(`could not read the page structurally:`, err);
+    return [];
+  }
 }
 
 /**

@@ -112,11 +112,17 @@ export async function scrape(): Promise<PriceItem[]> {
       // The specific parser above is exact when it works. When it does not,
       // read the page by meaning rather than markup before giving up.
       if (items.length === 0) {
+        // Guarded: this runs inside finally, so anything thrown here would
+        // mask the real failure and skip the diagnostics capture below.
+        try {
         for (const block of await extractPriceBlocks(page, GPU_NAME_HINTS)) {
           const item = priceBlockToItem(block, { billing: "per-hour", availability: "on-demand", region: "us-east", dealUrl: DEAL_URL });
           if (item && !items.some((i) => i.gpu_slug === item.gpu_slug)) items.push(item);
         }
         if (items.length) console.error(`[${PROVIDER_SLUG}] specific parser found nothing; recovered ${items.length} price(s) structurally.`);
+        } catch (err) {
+          console.error(`[${PROVIDER_SLUG}] structural recovery failed:`, err);
+        }
       }
       if (items.length === 0) await dumpPageDiagnostics(page, PROVIDER_SLUG);
       await browser.close();
