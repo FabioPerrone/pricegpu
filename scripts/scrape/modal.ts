@@ -23,7 +23,7 @@ export async function scrape(): Promise<PriceItem[]> {
     const items: PriceItem[] = [];
 
     try {
-      await page.goto(PRICING_URL, { waitUntil: "networkidle", timeout: 60000 });
+      await page.goto(PRICING_URL, { waitUntil: "domcontentloaded", timeout: 45000 });
 
       // Modal uses a table with GPU type, VRAM, and price per GPU-hour/second
       await page.waitForSelector("table, [class*='pricing'], [class*='gpu']", {

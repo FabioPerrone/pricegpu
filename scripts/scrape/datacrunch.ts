@@ -23,7 +23,7 @@ export async function scrape(): Promise<PriceItem[]> {
     const items: PriceItem[] = [];
 
     try {
-      await page.goto(PRICING_URL, { waitUntil: "networkidle", timeout: 60000 });
+      await page.goto(PRICING_URL, { waitUntil: "domcontentloaded", timeout: 45000 });
 
       // DataCrunch shows GPU instance products with on-demand and spot pricing
       await page.waitForSelector("table, [class*='instance'], [class*='gpu'], [class*='product']", {

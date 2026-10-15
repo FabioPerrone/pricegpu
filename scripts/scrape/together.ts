@@ -23,7 +23,7 @@ export async function scrape(): Promise<PriceItem[]> {
     const items: PriceItem[] = [];
 
     try {
-      await page.goto(PRICING_URL, { waitUntil: "networkidle", timeout: 60000 });
+      await page.goto(PRICING_URL, { waitUntil: "domcontentloaded", timeout: 45000 });
 
       // Together AI pricing page has dedicated GPU sections and inference pricing
       await page.waitForSelector("table, [class*='gpu'], [class*='pricing'], [class*='dedicated']", {

@@ -23,7 +23,7 @@ export async function scrape(): Promise<PriceItem[]> {
     const items: PriceItem[] = [];
 
     try {
-      await page.goto(PRICING_URL, { waitUntil: "networkidle", timeout: 60000 });
+      await page.goto(PRICING_URL, { waitUntil: "domcontentloaded", timeout: 45000 });
 
       // Genesis Cloud shows GPU instance types with hourly pricing
       await page.waitForSelector("table, [class*='instance'], [class*='gpu'], [class*='pricing']", {
