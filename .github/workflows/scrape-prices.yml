@@ -35,6 +35,8 @@ jobs:
       # reported success — which is how prices went 141 days stale unnoticed.
       - name: Scrape providers
         id: scrape
+        env:
+          SCRAPE_DIAGNOSTICS_DIR: scrape-diagnostics
         run: |
           failed=()
           for s in runpod vast lambda paperspace modal coreweave tensordock genesis \
@@ -48,6 +50,19 @@ jobs:
           done
           echo "failed=${failed[*]}" >> "$GITHUB_OUTPUT"
           echo "failed_count=${#failed[@]}" >> "$GITHUB_OUTPUT"
+
+      # A parser that matches nothing cannot be repaired from a row count, and
+      # the provider sites are not reachable from every development
+      # environment — so the run that fails is the run that has to bring back
+      # the page it failed on.
+      - name: Upload parse diagnostics
+        if: always() && steps.scrape.outputs.failed_count != '0'
+        uses: actions/upload-artifact@v4
+        with:
+          name: scrape-diagnostics
+          path: scrape-diagnostics/
+          retention-days: 14
+          if-no-files-found: ignore
 
       # The gate. A run that changes nothing is a failed run, however many
       # individual scrapers exited zero.

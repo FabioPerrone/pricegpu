@@ -212,9 +212,35 @@ export function normalizeGpuSlug(name: string): string | null {
   return null;
 }
 
+/**
+ * Writes a provider's prices, refusing to record an empty scrape.
+ *
+ * A selector that stops matching raises no error: the scraper walks zero rows,
+ * exits 0, and this function used to write `items: []` with a fresh timestamp
+ * and log "Saved 0 items". Eight of fifteen providers were in that state — a
+ * failure wearing a success, the same vice as the continue-on-error that hid
+ * the original crash.
+ *
+ * An empty result is therefore a failure: the previous file is left untouched,
+ * because yesterday's prices beat no prices, and the freshness check still
+ * reports them as stale so the breakage stays visible rather than becoming a
+ * silent blanking of the site's entire reason to exist.
+ */
 export function saveProviderPrices(providerSlug: string, items: PriceItem[]): void {
   const outDir = path.resolve("data/prices");
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+
+  if (items.length === 0) {
+    const existing = path.join(outDir, `${providerSlug}.json`);
+    console.error(
+      `[${providerSlug}] Parsed 0 prices — the page loaded but nothing matched. ` +
+        (fs.existsSync(existing)
+          ? `Keeping the previous ${existing}; it will be reported as stale.`
+          : `No previous data to keep.`)
+    );
+    process.exit(1);
+  }
+
   const priceFile: PriceFile = {
     scraped_at: new Date().toISOString(),
     scraper_version: SCRAPER_VERSION,
@@ -257,4 +283,37 @@ export async function launchBrowser() {
   const { chromium } = await import("playwright");
   const executablePath = process.env.PLAYWRIGHT_EXECUTABLE_PATH;
   return chromium.launch({ headless: true, ...(executablePath ? { executablePath } : {}) });
+}
+
+/**
+ * Captures why a parse found nothing.
+ *
+ * Eight scrapers return zero rows against pages that load fine, which means
+ * their selectors no longer match markup that has moved on. That cannot be
+ * diagnosed from a row count, and the provider sites are not reachable from
+ * every environment — so the run that fails is the run that has to collect the
+ * evidence. Written to a directory CI uploads as an artifact.
+ */
+export async function dumpPageDiagnostics(
+  page: { title(): Promise<string>; url(): string; content(): Promise<string>; screenshot(o: { path: string; fullPage?: boolean }): Promise<unknown> },
+  providerSlug: string,
+): Promise<void> {
+  const dir = process.env.SCRAPE_DIAGNOSTICS_DIR ?? "scrape-diagnostics";
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    const html = await page.content();
+    fs.writeFileSync(path.join(dir, `${providerSlug}.html`), html);
+    await page.screenshot({ path: path.join(dir, `${providerSlug}.png`), fullPage: true });
+
+    // A page that loaded but parsed to nothing is usually a changed layout or
+    // a block page; the title and the shape of the DOM separate the two fast.
+    const tables = (html.match(/<table/g) ?? []).length;
+    const rows = (html.match(/<tr/g) ?? []).length;
+    console.error(
+      `[${providerSlug}] diagnostics: "${await page.title()}" at ${page.url()} — ` +
+        `${html.length} bytes, ${tables} table(s), ${rows} row(s). Saved to ${dir}/${providerSlug}.{html,png}`
+    );
+  } catch (err) {
+    console.error(`[${providerSlug}] could not capture diagnostics:`, err);
+  }
 }
