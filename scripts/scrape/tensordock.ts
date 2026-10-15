@@ -23,7 +23,7 @@ export async function scrape(): Promise<PriceItem[]> {
     const items: PriceItem[] = [];
 
     try {
-      await page.goto(PRICING_URL, { waitUntil: "networkidle", timeout: 60000 });
+      await page.goto(PRICING_URL, { waitUntil: "domcontentloaded", timeout: 45000 });
 
       // TensorDock shows a marketplace table with GPU model, location, $/hr
       await page.waitForSelector("table, [class*='gpu'], [class*='pricing'], [class*='marketplace']", {

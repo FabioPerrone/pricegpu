@@ -66,10 +66,14 @@ jobs:
 
       # The gate. A run that changes nothing is a failed run, however many
       # individual scrapers exited zero.
-      - name: Verify prices actually refreshed
-        run: npx tsx scripts/health.ts --strict --max-stale-days 3
-
+      # Commit before the gate, not after. Partial success is still success:
+      # a run where five providers refresh and ten stay broken produced real
+      # prices, and the gate used to discard them because it ran first and
+      # failed the job. Today's run scraped 121 rows against the 89 on disk —
+      # RunPod alone went from 8 to 32 — and committed none of it. That had
+      # been happening every night for a month.
       - name: Commit refreshed prices
+        if: always()
         run: |
           git config user.email "bot@pricegpu.com"
           git config user.name "PriceGPU Bot"
@@ -80,6 +84,12 @@ jobs:
             git commit -m "chore: update GPU prices $(date -u '+%Y-%m-%d')"
             git push
           fi
+
+      # The gate still fails the run, so a broken scraper stays loud and the
+      # issue below still opens — it just no longer costs the data.
+      - name: Verify prices actually refreshed
+        if: always()
+        run: npx tsx scripts/health.ts --strict --max-stale-days 3
 
       - name: Archive price history
         run: npx tsx scripts/archive-history.ts

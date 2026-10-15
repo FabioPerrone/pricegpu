@@ -305,12 +305,25 @@ export async function dumpPageDiagnostics(
     fs.writeFileSync(path.join(dir, `${providerSlug}.html`), html);
     await page.screenshot({ path: path.join(dir, `${providerSlug}.png`), fullPage: true });
 
-    // A page that loaded but parsed to nothing is usually a changed layout or
-    // a block page; the title and the shape of the DOM separate the two fast.
     const tables = (html.match(/<table/g) ?? []).length;
     const rows = (html.match(/<tr/g) ?? []).length;
+    const title = await page.title();
+    const url = page.url();
+
+    // Name the kind of breakage. These four need completely different fixes,
+    // and a row count alone cannot tell them apart — which is how ten
+    // providers sat broken for months looking identical from the outside.
+    const kind = url.startsWith("chrome-error")
+      ? "UNREACHABLE — the browser could not load the page at all"
+      : /404|not found|page not found/i.test(title)
+        ? "DEAD URL — the page is gone; the provider moved, renamed or was acquired"
+        : tables === 0
+          ? "LAYOUT CHANGED — the page loaded but contains no <table> to read"
+          : "PARSER — tables are present but no row produced a usable price";
+
     console.error(
-      `[${providerSlug}] diagnostics: "${await page.title()}" at ${page.url()} — ` +
+      `[${providerSlug}] ${kind}\n` +
+        `[${providerSlug}] diagnostics: "${title}" at ${url} — ` +
         `${html.length} bytes, ${tables} table(s), ${rows} row(s). Saved to ${dir}/${providerSlug}.{html,png}`
     );
   } catch (err) {

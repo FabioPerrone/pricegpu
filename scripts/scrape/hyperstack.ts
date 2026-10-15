@@ -23,7 +23,7 @@ export async function scrape(): Promise<PriceItem[]> {
     const items: PriceItem[] = [];
 
     try {
-      await page.goto(PRICING_URL, { waitUntil: "networkidle", timeout: 60000 });
+      await page.goto(PRICING_URL, { waitUntil: "domcontentloaded", timeout: 45000 });
 
       // Hyperstack shows GPU flavors with per-hour pricing across regions
       await page.waitForSelector("table, [class*='flavor'], [class*='gpu'], [class*='pricing']", {

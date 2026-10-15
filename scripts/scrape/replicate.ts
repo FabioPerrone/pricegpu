@@ -23,7 +23,7 @@ export async function scrape(): Promise<PriceItem[]> {
     const items: PriceItem[] = [];
 
     try {
-      await page.goto(PRICING_URL, { waitUntil: "networkidle", timeout: 60000 });
+      await page.goto(PRICING_URL, { waitUntil: "domcontentloaded", timeout: 45000 });
 
       // Replicate shows hardware tiers (CPU, T4, A40, A100) with per-second pricing
       await page.waitForSelector("table, [class*='hardware'], [class*='gpu'], [class*='pricing']", {

@@ -23,7 +23,7 @@ export async function scrape(): Promise<PriceItem[]> {
     const items: PriceItem[] = [];
 
     try {
-      await page.goto(PRICING_URL, { waitUntil: "networkidle", timeout: 60000 });
+      await page.goto(PRICING_URL, { waitUntil: "domcontentloaded", timeout: 45000 });
 
       // fal.ai shows GPU machine types with per-second or per-millisecond pricing
       await page.waitForSelector("table, [class*='gpu'], [class*='machine'], [class*='pricing']", {
