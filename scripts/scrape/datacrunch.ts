@@ -2,6 +2,9 @@
 import fs from "fs";
 import path from "path";
 import {
+  extractPriceBlocks,
+  priceBlockToItem,
+  GPU_NAME_HINTS,
   dumpPageDiagnostics,
   launchBrowser,
   normalizeGpuSlug,
@@ -113,6 +116,15 @@ export async function scrape(): Promise<PriceItem[]> {
       await page.screenshot({ path: path.join(screenshotDir, `${PROVIDER_SLUG}-${ts}.png`) });
       throw err;
     } finally {
+      // The specific parser above is exact when it works. When it does not,
+      // read the page by meaning rather than markup before giving up.
+      if (items.length === 0) {
+        for (const block of await extractPriceBlocks(page, GPU_NAME_HINTS)) {
+          const item = priceBlockToItem(block, { billing: "per-hour", availability: "on-demand", region: "eu-central", dealUrl: DEAL_URL });
+          if (item && !items.some((i) => i.gpu_slug === item.gpu_slug)) items.push(item);
+        }
+        if (items.length) console.error(`[${PROVIDER_SLUG}] specific parser found nothing; recovered ${items.length} price(s) structurally.`);
+      }
       if (items.length === 0) await dumpPageDiagnostics(page, PROVIDER_SLUG);
       await browser.close();
     }

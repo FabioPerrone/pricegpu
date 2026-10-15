@@ -385,3 +385,110 @@ export async function dumpPageDiagnostics(
     console.error(`[${providerSlug}] could not capture diagnostics:`, err);
   }
 }
+
+/**
+ * A price block lifted off a page without knowing its markup: the text of the
+ * smallest element that holds both a GPU name and an hourly price.
+ */
+export interface PriceBlock {
+  text: string;
+  prices: number[];
+}
+
+/**
+ * Extracts price blocks without depending on the page's structure.
+ *
+ * Every scraper here targets a layout, and layouts move: nine of fifteen
+ * providers broke at once, four of them because their pricing stopped being a
+ * <table>. The replacements are no sturdier — Vast.ai's price sits under
+ * `text-[24px] text-white`, Hyperstack's under `page-price_card_row_item_col5`.
+ * Writing those selectors down just schedules the next outage.
+ *
+ * So this looks for meaning instead of markup: the smallest elements whose own
+ * text contains both something that reads as a price and something that reads
+ * as a GPU. Table row, flex card or grid cell, it does not care. Callers use
+ * it as a fallback when their specific selector yields nothing, which keeps a
+ * working scraper exact and a broken one alive.
+ */
+export async function extractPriceBlocks(
+  page: { evaluate?<T>(fn: () => T): Promise<T> },
+  gpuHints: string[],
+): Promise<PriceBlock[]> {
+  if (!page.evaluate) return [];
+  return page.evaluate(new Function("hints", `
+    const PRICE = /\\$\\s?(\\d+(?:[.,]\\d+)?)/g;
+    const hintRe = new RegExp("(" + hints.join("|") + ")", "i");
+    const holds = (el) => {
+      const t = (el.textContent || "").trim();
+      return t.length > 0 && t.length < 400 && /\\$\\s?\\d/.test(t) && hintRe.test(t);
+    };
+    const out = [];
+    const seen = new Set();
+    for (const el of Array.from(document.querySelectorAll("body *"))) {
+      if (!holds(el)) continue;
+      // Keep only the smallest such element: if a descendant also qualifies,
+      // this one is a container and its text would merge several offers.
+      if (Array.from(el.children).some(holds)) continue;
+      const text = (el.textContent || "").replace(/\\s+/g, " ").trim();
+      if (seen.has(text)) continue;
+      seen.add(text);
+      const prices = [];
+      let m;
+      PRICE.lastIndex = 0;
+      while ((m = PRICE.exec(text)) !== null) prices.push(parseFloat(m[1].replace(",", ".")));
+      if (prices.length) out.push({ text, prices });
+      if (out.length >= 200) break;
+    }
+    return out;
+  `) as unknown as () => PriceBlock[]);
+}
+
+/**
+ * Turns a price block's text into a priced GPU row.
+ *
+ * Kept separate from the browser so it can be tested directly: the matching
+ * rules are where this is most likely to be wrong, and a provider page is not
+ * reachable from every environment.
+ */
+export function priceBlockToItem(
+  block: PriceBlock,
+  opts: { billing: PriceItem["billing"]; availability: PriceItem["availability"]; region: string; dealUrl: string },
+): PriceItem | null {
+  const slug = normalizeGpuSlug(block.text);
+  if (!slug) return null;
+
+  // Hourly rates only. A page mixes them with monthly plans and credits, and
+  // the smallest plausible rate in the block is the per-hour one far more
+  // often than not; anything above $200 is a node, a month or a promotion.
+  const hourly = block.prices.filter((p) => p > 0 && p < 200);
+  if (!hourly.length) return null;
+  const price = Math.min(...hourly);
+
+  // Multi-GPU nodes quote the whole box. "8x H100" at $42 is $5.25 a GPU, and
+  // listing it at $42 against a single-GPU rate would be a false comparison.
+  const count = Number(block.text.match(/\b(\d+)\s*[x×]\s*(?=[A-Za-z])/i)?.[1] ?? 1);
+  const perGpu = count > 1 && count <= 16 ? price / count : price;
+
+  return {
+    gpu_slug: slug,
+    configuration: count > 1 ? `${count}x ${slug}` : `1x ${slug}`,
+    price_usd_per_hour: Number(perGpu.toFixed(4)),
+    billing: opts.billing,
+    availability: opts.availability,
+    region: opts.region,
+    deal_url: opts.dealUrl,
+  };
+}
+
+/**
+ * Distinctive fragments of GPU names, used to pre-filter page text cheaply
+ * before normalizeGpuSlug does the real matching. Two characters or fewer
+ * match everything, so they are left out.
+ */
+export const GPU_NAME_HINTS: string[] = Array.from(
+  new Set(
+    Object.keys(GPU_SLUG_MAP)
+      .filter((k) => k.length >= 3)
+      .map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+  )
+);
