@@ -46,6 +46,13 @@ const feeds = readdirSync(path.join(DATA, 'prices'))
       ageDays: Number.isFinite(age) ? Number(age.toFixed(1)) : null,
       stale: age > STALE_AFTER_DAYS,
       monetized: Boolean(providers.find((p) => p.slug === slug)?.affiliate_param_env),
+      // Wired to a program but with no code in this environment: the redirect
+      // still works and sends the visitor to the provider's bare URL, so the
+      // click lands and earns nothing.
+      refCodeSet: (() => {
+        const env = providers.find((p) => p.slug === slug)?.affiliate_param_env;
+        return env ? Boolean(process.env[env]) : null;
+      })(),
     };
   })
   .sort((a, b) => b.rows - a.rows);
@@ -71,6 +78,10 @@ const report = {
     staleFeeds: feeds.filter((f) => f.stale).map((f) => f.provider),
     emptyFeeds: feeds.filter((f) => f.rows === 0).map((f) => f.provider),
     unmonetizedWithPrices: feeds.filter((f) => f.rows > 0 && !f.monetized).map((f) => f.provider),
+    // The gap that costs the most and is cheapest to close: a provider wired
+    // to an affiliate program whose ref code is not set, so every click it
+    // receives is a free referral.
+    missingRefCode: feeds.filter((f) => f.monetized && f.refCodeSet === false).map((f) => f.provider),
     gpusInCatalogue: gpus.length,
     gpusWithPrices: gpus.length - emptyGpuPages.length,
     emptyGpuPages: emptyGpuPages.map((g) => g.slug),
@@ -90,6 +101,9 @@ if (asJson) {
   console.log(`  stale feeds       ${s.staleFeeds.length ? s.staleFeeds.join(', ') : 'none'}`);
   console.log(`  empty feeds       ${s.emptyFeeds.length ? s.emptyFeeds.join(', ') : 'none'}`);
   console.log(`  unmonetized       ${s.unmonetizedWithPrices.length ? s.unmonetizedWithPrices.join(', ') : 'none'}`);
+  console.log(
+    `  no ref code       ${s.missingRefCode.length ? `${s.missingRefCode.length} provider(s) — their clicks earn nothing` : 'none'}`
+  );
 
   console.log('\n  Feed freshness');
   for (const f of feeds) {
