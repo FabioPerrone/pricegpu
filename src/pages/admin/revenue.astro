@@ -44,7 +44,7 @@ interface Health {
   feeds: { provider: string; rows: number; ageDays: number | null; stale: boolean; monetized: boolean }[];
   summary: {
     priceRows: number; staleFeeds: string[]; emptyFeeds: string[];
-    unmonetizedWithPrices: string[]; gpusInCatalogue: number; gpusWithPrices: number;
+    unmonetizedWithPrices: string[]; missingRefCode?: string[]; gpusInCatalogue: number; gpusWithPrices: number;
     emptyGpuPages: string[]; orphanedGpuSlugs: string[];
   };
 }
@@ -316,6 +316,19 @@ const underperforming = (metrics?.byPage ?? [])
       </>
     )}
 
+    {health && (health.summary.missingRefCode?.length ?? 0) > 0 && (
+      <div class="card" style="margin-top: 1.5rem; border-color: rgba(230,103,103,0.4); background: rgba(230,103,103,0.06);">
+        <strong style="color: #e66767;">
+          {health.summary.missingRefCode!.length} provider(s) send traffic that earns nothing.
+        </strong>
+        <p style="margin: 0.4rem 0 0; font-size: 0.85rem; color: var(--text-secondary);">
+          Their affiliate redirect works and lands on the provider's bare URL, because the ref
+          variable is not set in the Pages project: {health.summary.missingRefCode!.join(', ')}.
+          Setting those variables is the cheapest revenue change available — no deploy needed.
+        </p>
+      </div>
+    )}
+
     <h2>Data health</h2>
     {!health ? (
       <div class="empty">Run <code>npm run health</code> to generate data/health.json.</div>
@@ -338,11 +351,11 @@ const underperforming = (metrics?.byPage ?? [])
             </div>
           </div>
           <div class="card tile">
-            <div class="label">Unmonetized</div>
-            <div class="value" style={health.summary.unmonetizedWithPrices.length ? 'color: var(--warn);' : ''}>
-              {health.summary.unmonetizedWithPrices.length}
+            <div class="label">No ref code</div>
+            <div class="value" style={(health.summary.missingRefCode?.length ?? 0) ? 'color: var(--bad);' : ''}>
+              {health.summary.missingRefCode?.length ?? 0}
             </div>
-            <div class="note">providers earning nothing</div>
+            <div class="note">wired, but every click is a free referral</div>
           </div>
         </section>
 
