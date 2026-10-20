@@ -1,5 +1,5 @@
 {
-  "scraped_at": "2026-10-19T08:24:32.511Z",
+  "scraped_at": "2026-10-20T08:09:37.874Z",
   "scraper_version": "1.0.0",
   "items": [
     {
@@ -42,6 +42,15 @@
       "gpu_slug": "b200",
       "configuration": "1x NVIDIA HGX B200",
       "price_usd_per_hour": 4.09,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://api.together.ai/"
+    },
+    {
+      "gpu_slug": "b200",
+      "configuration": "1x NVIDIA HGX B200\n\nPROMO\nPROMOTION VALID UNTIL 12/14/2026",
+      "price_usd_per_hour": 11,
       "billing": "per-hour",
       "availability": "on-demand",
       "region": "us-east",
