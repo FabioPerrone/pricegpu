@@ -1,12 +1,12 @@
 {
-  "scraped_at": "2026-10-20T08:09:41.229Z",
+  "scraped_at": "2026-10-21T08:14:58.256Z",
   "scraper_version": "1.0.0",
   "items": [
     {
       "gpu_slug": "b200",
       "configuration": "1x GB200",
       "price_usd_per_hour": 9.99,
-      "billing": "per-hour",
+      "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",
       "deal_url": "https://fal.ai/"
@@ -14,8 +14,8 @@
     {
       "gpu_slug": "b200",
       "configuration": "1x B200",
-      "price_usd_per_hour": 7.99,
-      "billing": "per-hour",
+      "price_usd_per_hour": 7.9884,
+      "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",
       "deal_url": "https://fal.ai/"
@@ -23,8 +23,8 @@
     {
       "gpu_slug": "h200-sxm",
       "configuration": "1x H200",
-      "price_usd_per_hour": 6,
-      "billing": "per-hour",
+      "price_usd_per_hour": 6.0012,
+      "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",
       "deal_url": "https://fal.ai/"
@@ -33,7 +33,7 @@
       "gpu_slug": "h100-sxm",
       "configuration": "1x H100",
       "price_usd_per_hour": 4.5,
-      "billing": "per-hour",
+      "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",
       "deal_url": "https://fal.ai/"
