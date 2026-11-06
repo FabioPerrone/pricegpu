@@ -1,0 +1,204 @@
+{
+  "scraped_at": "2026-11-06T10:08:48.768Z",
+  "scraper_version": "1.0.0",
+  "items": [
+    {
+      "gpu_slug": "h100-sxm",
+      "configuration": "180x GB",
+      "price_usd_per_hour": 7.69,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-west-1",
+      "deal_url": "https://lambdalabs.com/service/gpu-cloud"
+    },
+    {
+      "gpu_slug": "h100-sxm",
+      "configuration": "80x GB",
+      "price_usd_per_hour": 4.59,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-west-1",
+      "deal_url": "https://lambdalabs.com/service/gpu-cloud"
+    },
+    {
+      "gpu_slug": "h100-sxm",
+      "configuration": "80x GB",
+      "price_usd_per_hour": 3.19,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-west-1",
+      "deal_url": "https://lambdalabs.com/service/gpu-cloud"
+    },
+    {
+      "gpu_slug": "h100-sxm",
+      "configuration": "40x GB",
+      "price_usd_per_hour": 1.99,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-west-1",
+      "deal_url": "https://lambdalabs.com/service/gpu-cloud"
+    },
+    {
+      "gpu_slug": "h100-sxm",
+      "configuration": "16x GB",
+      "price_usd_per_hour": 0.79,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-west-1",
+      "deal_url": "https://lambdalabs.com/service/gpu-cloud"
+    },
+    {
+      "gpu_slug": "h100-sxm",
+      "configuration": "180x GB",
+      "price_usd_per_hour": 7.79,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-west-1",
+      "deal_url": "https://lambdalabs.com/service/gpu-cloud"
+    },
+    {
+      "gpu_slug": "h100-sxm",
+      "configuration": "80x GB",
+      "price_usd_per_hour": 4.69,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-west-1",
+      "deal_url": "https://lambdalabs.com/service/gpu-cloud"
+    },
+    {
+      "gpu_slug": "h100-sxm",
+      "configuration": "40x GB",
+      "price_usd_per_hour": 1.99,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-west-1",
+      "deal_url": "https://lambdalabs.com/service/gpu-cloud"
+    },
+    {
+      "gpu_slug": "h100-sxm",
+      "configuration": "48x GB",
+      "price_usd_per_hour": 1.09,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-west-1",
+      "deal_url": "https://lambdalabs.com/service/gpu-cloud"
+    },
+    {
+      "gpu_slug": "h100-sxm",
+      "configuration": "180x GB",
+      "price_usd_per_hour": 7.89,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-west-1",
+      "deal_url": "https://lambdalabs.com/service/gpu-cloud"
+    },
+    {
+      "gpu_slug": "h100-sxm",
+      "configuration": "80x GB",
+      "price_usd_per_hour": 4.79,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-west-1",
+      "deal_url": "https://lambdalabs.com/service/gpu-cloud"
+    },
+    {
+      "gpu_slug": "h100-sxm",
+      "configuration": "40x GB",
+      "price_usd_per_hour": 1.99,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-west-1",
+      "deal_url": "https://lambdalabs.com/service/gpu-cloud"
+    },
+    {
+      "gpu_slug": "h100-sxm",
+      "configuration": "48x GB",
+      "price_usd_per_hour": 1.09,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-west-1",
+      "deal_url": "https://lambdalabs.com/service/gpu-cloud"
+    },
+    {
+      "gpu_slug": "h100-sxm",
+      "configuration": "180x GB",
+      "price_usd_per_hour": 7.99,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-west-1",
+      "deal_url": "https://lambdalabs.com/service/gpu-cloud"
+    },
+    {
+      "gpu_slug": "h100-sxm",
+      "configuration": "96x GB",
+      "price_usd_per_hour": 2.59,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-west-1",
+      "deal_url": "https://lambdalabs.com/service/gpu-cloud"
+    },
+    {
+      "gpu_slug": "h100-sxm",
+      "configuration": "80x GB",
+      "price_usd_per_hour": 4.89,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-west-1",
+      "deal_url": "https://lambdalabs.com/service/gpu-cloud"
+    },
+    {
+      "gpu_slug": "h100-sxm",
+      "configuration": "80x GB",
+      "price_usd_per_hour": 3.79,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-west-1",
+      "deal_url": "https://lambdalabs.com/service/gpu-cloud"
+    },
+    {
+      "gpu_slug": "h100-sxm",
+      "configuration": "40x GB",
+      "price_usd_per_hour": 1.99,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-west-1",
+      "deal_url": "https://lambdalabs.com/service/gpu-cloud"
+    },
+    {
+      "gpu_slug": "h100-sxm",
+      "configuration": "40x GB",
+      "price_usd_per_hour": 1.99,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-west-1",
+      "deal_url": "https://lambdalabs.com/service/gpu-cloud"
+    },
+    {
+      "gpu_slug": "h100-sxm",
+      "configuration": "24x GB",
+      "price_usd_per_hour": 1.29,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-west-1",
+      "deal_url": "https://lambdalabs.com/service/gpu-cloud"
+    },
+    {
+      "gpu_slug": "h100-sxm",
+      "configuration": "48x GB",
+      "price_usd_per_hour": 1.09,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-west-1",
+      "deal_url": "https://lambdalabs.com/service/gpu-cloud"
+    },
+    {
+      "gpu_slug": "h100-sxm",
+      "configuration": "24x GB",
+      "price_usd_per_hour": 0.69,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-west-1",
+      "deal_url": "https://lambdalabs.com/service/gpu-cloud"
+    }
+  ]
+}
