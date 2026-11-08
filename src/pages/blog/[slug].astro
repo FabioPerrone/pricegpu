@@ -26,7 +26,7 @@ const schemas = [
     description: post.data.description,
     datePublished: post.data.pubDate.toISOString(),
     dateModified: post.data.pubDate.toISOString(),
-    author: { '@type': 'Person', name: post.data.author, url: 'https://pricegpu.com/about' },
+    author: { '@type': 'Organization', name: post.data.author, url: 'https://pricegpu.com/about' },
     publisher: {
       '@type': 'Organization',
       name: 'PriceGPU',
@@ -43,7 +43,7 @@ const schemas = [
 ];
 ---
 
-<Layout {title} {description} {canonical} {schemas} ogType={post.data.isNews ? 'article' : 'website'} {ogImage}>
+<Layout {title} {description} {canonical} {schemas} ogType={post.data.isNews ? 'article' : 'website'} {ogImage} noindex={post.data.isNews}>
   <nav class="breadcrumb">
     <a href="/">Home</a><span>/</span><a href="/blog">Blog</a><span>/</span><span>{post.data.title}</span>
   </nav>
@@ -56,6 +56,7 @@ const schemas = [
         {post.data.tags.length > 0 && <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">{post.data.tags.map((tag) => <span class="badge badge-gray">{tag}</span>)}</div>}
       </div>
     </header>
+    {post.data.isNews && <p class="card" style="margin-bottom: 1.5rem; font-size: 0.9rem;">Archived automated snapshot. The prices below are out of date; see the <a href="/">current comparison</a>.</p>}
     <div class="prose"><Content /></div>
   </article>
 

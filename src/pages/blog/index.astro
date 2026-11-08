@@ -3,7 +3,7 @@ import Layout from '../../layouts/Layout.astro';
 import { buildTitle, buildDescription, buildCanonical, buildBreadcrumbs } from '../../lib/seo.ts';
 import { getCollection } from 'astro:content';
 
-const posts = (await getCollection('blog')).filter((p) => !p.data.draft).sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime());
+const posts = (await getCollection('blog')).filter((p) => !p.data.draft && !p.data.isNews).sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime());
 const title = buildTitle(['Blog', 'PriceGPU']);
 const description = buildDescription('Cloud GPU pricing guides and analysis for ML engineers. Spot vs on-demand, H100 vs A100, LLM inference sizing, and more.');
 const canonical = buildCanonical('/blog');
