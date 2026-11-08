@@ -7,7 +7,7 @@
       "url": [
         "http://localhost/index.html",
         "http://localhost/gpu/h100-sxm/index.html",
-        "http://localhost/compare/runpod-vs-vast-ai/index.html"
+        "http://localhost/compare/runpod-vs-lambda-labs/index.html"
       ],
       "settings": {
         "chromeFlags": "--no-sandbox"

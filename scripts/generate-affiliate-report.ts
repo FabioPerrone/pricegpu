@@ -4,7 +4,8 @@ const CF_API_TOKEN = process.env.CF_API_TOKEN;
 const CF_ACCOUNT_ID = process.env.CF_ACCOUNT_ID;
 const ZONE_NAME = 'pricegpu.com';
 const OUTPUT = 'data/affiliate-report.json';
-const DAYS = 30;
+// Cloudflare rejects a range over 30 days, and date_leq includes all of today.
+const DAYS = 29;
 
 if (!CF_API_TOKEN || !CF_ACCOUNT_ID) {
   console.error('Missing CF_API_TOKEN or CF_ACCOUNT_ID');
