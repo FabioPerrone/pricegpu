@@ -25,7 +25,7 @@
     "features": ["spot", "on-demand", "interruptible", "storage", "jupyter"],
     "trust_score": 4.1,
     "founded": 2018,
-    "scrape_url": "https://vast.ai/pricing",
+    "scrape_url": "https://console.vast.ai/api/v0/bundles/",
     "scrape_strategy": "playwright",
     "description": "Peer-to-peer GPU marketplace that aggregates idle hardware from independent hosts, offering some of the lowest per-hour rates available."
   },
@@ -85,7 +85,7 @@
     "features": ["on-demand", "reserved", "kubernetes", "high-mem", "infiniband-networking", "bare-metal"],
     "trust_score": 4.6,
     "founded": 2017,
-    "scrape_url": "https://www.coreweave.com/gpu-cloud-computing",
+    "scrape_url": "https://www.coreweave.com/pricing",
     "scrape_strategy": "playwright",
     "description": "Enterprise-grade Kubernetes-native GPU cloud specializing in large-scale AI training clusters with InfiniBand networking and bare-metal performance."
   },
@@ -100,7 +100,7 @@
     "features": ["on-demand", "spot", "bare-metal", "custom-hardware"],
     "trust_score": 3.9,
     "founded": 2021,
-    "scrape_url": "https://tensordock.com/pricing",
+    "scrape_url": "https://www.tensordock.com/cloud-gpus.html",
     "scrape_strategy": "playwright",
     "description": "Budget-friendly GPU marketplace aggregating data-center hardware from multiple hosts, offering broad GPU variety at competitive hourly rates."
   },
@@ -220,7 +220,7 @@
     "features": ["on-demand", "reserved", "spot", "persistent-storage", "ssh-access", "jupyter"],
     "trust_score": 4.1,
     "founded": 2019,
-    "scrape_url": "https://datacrunch.io/products/gpu-cloud",
+    "scrape_url": "https://verda.com/pricing",
     "scrape_strategy": "playwright",
     "description": "Finnish GPU cloud specializing in A100 and H100 instances with persistent storage, competitive European pricing, and straightforward SSH access."
   }

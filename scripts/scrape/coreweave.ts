@@ -1,16 +1,12 @@
 
-import fs from "fs";
-import path from "path";
 import {
-  extractPriceBlocks,
-  priceBlockToItem,
-  GPU_NAME_HINTS,
-  dumpPageDiagnostics,
-  launchBrowser,
+  fetchPage,
+  htmlSegments,
+  keepPlausiblePrices,
   normalizeGpuSlug,
+  parseDollars,
   saveProviderPrices,
   withRetry,
-  USER_AGENT,
 } from "./_shared.js";
 import type { PriceItem } from "./_shared.js";
 
@@ -18,114 +14,58 @@ const PROVIDER_SLUG = "coreweave";
 const PRICING_URL = "https://www.coreweave.com/pricing";
 const DEAL_URL = "https://cloud.coreweave.com/";
 
-export async function scrape(): Promise<PriceItem[]> {
-  return withRetry(async () => {
-    const browser = await launchBrowser();
-    const context = await browser.newContext({ userAgent: USER_AGENT });
-    const page = await context.newPage();
-    const items: PriceItem[] = [];
+// CoreWeave's plain "NVIDIA A100" is its 80GB NVLink (SXM) node.
+const PAGE_LABELS: Record<string, string> = { "NVIDIA A100": "a100-80gb-sxm" };
 
-    try {
-      await page.goto(PRICING_URL, { waitUntil: "domcontentloaded", timeout: 45000 });
+const REGION_BY_HEADING: Record<string, string> = { "north america": "us-east", europe: "eu-central" };
 
-      // CoreWeave has a detailed pricing table with GPU type, vCPUs, RAM, storage, and price
-      await page.waitForSelector("table, [class*='pricing'], [class*='gpu'], [class*='instance']", {
-        timeout: 30000,
-      }).catch(() => null);
+/**
+ * Each row is `name | GPU count | specs… | price | name | On-Demand Price: |
+ * $x | / Hour | Spot Price: | $y`. Prices are for the whole node, so they are
+ * divided by the GPU count; the page's own "single GPU" column confirms that.
+ */
+export function parseGpuRows(segments: string[]): PriceItem[] {
+  const items: PriceItem[] = [];
+  let region: string | undefined;
 
-      const rows = await page.$$eval("table tbody tr", (trs) =>
-        trs.map((tr) => {
-          const cells = Array.from(tr.querySelectorAll("td"));
-          return cells.map((c) => (c as HTMLElement).innerText.trim());
-        })
-      );
+  for (let i = 0; i < segments.length; i++) {
+    const heading = segments[i].match(/^REGION:\s*(.+)$/i);
+    if (heading) region = REGION_BY_HEADING[heading[1].trim().toLowerCase()];
+    if (segments[i] !== "On-Demand Price:" || !region) continue;
 
-      for (const cells of rows) {
-        if (cells.length < 2) continue;
-        const rawName = cells[0];
-        const priceText = cells.find((c) => /\$[\d.]+/.test(c)) ?? "";
-        const priceMatch = priceText.match(/\$([\d.]+)/);
-        if (!priceMatch) continue;
-        const price = parseFloat(priceMatch[1]);
-        if (isNaN(price) || price <= 0) continue;
+    const name = segments[i - 1];
+    const nameAt = segments.slice(Math.max(0, i - 12), i - 1).lastIndexOf(name);
+    if (nameAt < 0) continue;
+    const gpuCount = Number(segments[Math.max(0, i - 12) + nameAt + 1]);
+    const slug = PAGE_LABELS[name] ?? normalizeGpuSlug(name);
+    if (!slug || !Number.isInteger(gpuCount) || gpuCount < 1 || gpuCount > 16) continue;
 
-        // CoreWeave instance names: "A100_NVLINK_80GB", "H100_NVLINK_80GB", etc.
-        const normalized = rawName
-          .replace(/_/g, " ")
-          .replace(/NVLINK/i, "SXM")
-          .replace(/NVLINK4/i, "SXM");
-        const slug = normalizeGpuSlug(normalized);
-        if (!slug) continue;
-
-        // Check for region in cells
-        const regionCell = cells.find((c) => /us-|eu-|asia/i.test(c));
-        const region = regionCell ? regionCell.toLowerCase().trim() : "us-east";
-
-        items.push({
-          gpu_slug: slug,
-          configuration: `1x ${rawName}`,
-          price_usd_per_hour: price,
-          billing: "per-hour",
-          availability: "on-demand",
-          region,
-          deal_url: DEAL_URL,
-        });
-      }
-
-      // Fallback: JSON-LD or script data
-      if (items.length === 0) {
-        const scriptContent = await page.$$eval("script[type='application/json'], script[type='application/ld+json']", (scripts) =>
-          scripts.map((s) => s.textContent ?? "")
-        );
-
-        for (const content of scriptContent) {
-          if (!content.includes("price") && !content.includes("gpu")) continue;
-          try {
-            const data = JSON.parse(content);
-            const entries = Array.isArray(data) ? data : [data];
-            for (const entry of entries) {
-              if (!entry.name || !entry.price) continue;
-              const slug = normalizeGpuSlug(String(entry.name));
-              if (!slug) continue;
-              const price = parseFloat(String(entry.price));
-              if (isNaN(price) || price <= 0) continue;
-              items.push({
-                gpu_slug: slug,
-                configuration: `1x ${entry.name}`,
-                price_usd_per_hour: price,
-                billing: "per-hour",
-                availability: "on-demand",
-                region: "us-east",
-                deal_url: DEAL_URL,
-              });
-            }
-          } catch {
-            // not valid JSON
-          }
-        }
-      }
-    } catch (err) {
-      const screenshotDir = "/tmp/screenshots";
-      if (!fs.existsSync(screenshotDir)) fs.mkdirSync(screenshotDir, { recursive: true });
-      const ts = Date.now();
-      await page.screenshot({ path: path.join(screenshotDir, `${PROVIDER_SLUG}-${ts}.png`) });
-      throw err;
-    } finally {
-      // The specific parser above is exact when it works. When it does not,
-      // read the page by meaning rather than markup before giving up.
-      if (items.length === 0) {
-        for (const block of await extractPriceBlocks(page, GPU_NAME_HINTS)) {
-          const item = priceBlockToItem(block, { billing: "per-hour", availability: "on-demand", region: "us-east", dealUrl: DEAL_URL });
-          if (item && !items.some((i) => i.gpu_slug === item.gpu_slug)) items.push(item);
-        }
-        if (items.length) console.error(`[${PROVIDER_SLUG}] specific parser found nothing; recovered ${items.length} price(s) structurally.`);
-      }
-      if (items.length === 0) await dumpPageDiagnostics(page, PROVIDER_SLUG);
-      await browser.close();
+    const spotAt = segments.indexOf("Spot Price:", i);
+    const prices: Array<[PriceItem["availability"], number | null]> = [
+      ["on-demand", parseDollars(segments[i + 1])],
+      ["spot", spotAt > 0 && spotAt < i + 6 ? parseDollars(segments[spotAt + 1]) : null],
+    ];
+    for (const [availability, nodePrice] of prices) {
+      if (nodePrice === null) continue;
+      items.push({
+        gpu_slug: slug,
+        configuration: `${gpuCount}x ${name}`,
+        price_usd_per_hour: Number((nodePrice / gpuCount).toFixed(4)),
+        billing: "per-hour",
+        availability,
+        region,
+        deal_url: DEAL_URL,
+      });
     }
+  }
+  return items;
+}
 
-    return items;
-  });
+export async function scrape(): Promise<PriceItem[]> {
+  const html = await withRetry(() => fetchPage(PRICING_URL));
+  const items = keepPlausiblePrices(PROVIDER_SLUG, parseGpuRows(htmlSegments(html)));
+  if (!items.length) console.error(`[${PROVIDER_SLUG}] no GPU rows matched in ${html.length} bytes from ${PRICING_URL}`);
+  return items;
 }
 
 const items = await scrape();

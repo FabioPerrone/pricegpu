@@ -1,136 +1,67 @@
 
-import fs from "fs";
-import path from "path";
 import {
-  extractPriceBlocks,
-  priceBlockToItem,
-  GPU_NAME_HINTS,
-  dumpPageDiagnostics,
-  launchBrowser,
+  fetchPage,
+  htmlSegments,
+  keepPlausiblePrices,
   normalizeGpuSlug,
+  parseDollars,
   saveProviderPrices,
   withRetry,
-  USER_AGENT,
 } from "./_shared.js";
 import type { PriceItem } from "./_shared.js";
 
+// DataCrunch rebranded as Verda; datacrunch.io now redirects to verda.com.
 const PROVIDER_SLUG = "datacrunch";
-const PRICING_URL = "https://datacrunch.io/products";
-const DEAL_URL = "https://cloud.datacrunch.io/";
+const PRICING_URL = "https://verda.com/pricing";
+const DEAL_URL = "https://console.verda.com/";
+
+/**
+ * Rows read `1x H100 SXM5 80GB | CPUs | RAM | VRAM | $4.938/h | $2.469/h`, the
+ * last two being on-demand and spot. Only 1x rows are read: larger instances
+ * are linear multiples. Confidential-computing (CC) variants are skipped
+ * because gpus.json has no such product.
+ */
+export function parseGpuRows(segments: string[]): PriceItem[] {
+  const start = segments.indexOf("GPU instances");
+  if (start < 0) return [];
+
+  const best = new Map<string, PriceItem>();
+  for (let i = start; i < segments.length; i++) {
+    const m = segments[i].match(/^1x\s+(.+)$/);
+    if (!m || /\bCC\b/.test(m[1])) continue;
+    const slug = normalizeGpuSlug(m[1]);
+    if (!slug) continue;
+
+    const priceAt = segments.slice(i + 1, i + 8).findIndex((s) => parseDollars(s) !== null);
+    if (priceAt < 0) continue;
+    const prices: Array<[PriceItem["availability"], number | null]> = [
+      ["on-demand", parseDollars(segments[i + 1 + priceAt])],
+      ["spot", parseDollars(segments[i + 2 + priceAt])],
+    ];
+    for (const [availability, price] of prices) {
+      if (price === null) continue;
+      const key = `${slug}|${availability}`;
+      const existing = best.get(key);
+      if (existing && existing.price_usd_per_hour <= price) continue;
+      best.set(key, {
+        gpu_slug: slug,
+        configuration: `1x ${m[1]}`,
+        price_usd_per_hour: price,
+        billing: "per-hour",
+        availability,
+        region: "eu-central",
+        deal_url: DEAL_URL,
+      });
+    }
+  }
+  return [...best.values()];
+}
 
 export async function scrape(): Promise<PriceItem[]> {
-  return withRetry(async () => {
-    const browser = await launchBrowser();
-    const context = await browser.newContext({ userAgent: USER_AGENT });
-    const page = await context.newPage();
-    const items: PriceItem[] = [];
-
-    try {
-      await page.goto(PRICING_URL, { waitUntil: "domcontentloaded", timeout: 45000 });
-
-      // DataCrunch shows GPU instance products with on-demand and spot pricing
-      await page.waitForSelector("table, [class*='instance'], [class*='gpu'], [class*='product']", {
-        timeout: 30000,
-      }).catch(() => null);
-
-      const rows = await page.$$eval("table tbody tr", (trs) =>
-        trs.map((tr) => {
-          const cells = Array.from(tr.querySelectorAll("td"));
-          return cells.map((c) => (c as HTMLElement).innerText.trim());
-        })
-      );
-
-      for (const cells of rows) {
-        if (cells.length < 2) continue;
-        const rawName = cells[0];
-        const priceText = cells.find((c) => /\$[\d.]+/.test(c)) ?? "";
-        const priceMatch = priceText.match(/\$([\d.]+)/);
-        if (!priceMatch) continue;
-        const price = parseFloat(priceMatch[1]);
-        if (isNaN(price) || price <= 0) continue;
-
-        // DataCrunch instance names: "1V100.6V.80G", "8A100.80G.SXM", etc.
-        // Try to decode the pattern: count+GPU.vCPUs.RAM
-        const dcMatch = rawName.match(/^(\d+)(V100|A100|H100|A10|RTX\d+|L40)/i);
-        let gpuName: string;
-        let count: number;
-        if (dcMatch) {
-          count = parseInt(dcMatch[1]);
-          gpuName = dcMatch[2].toUpperCase();
-          // Check for SXM in rest
-          if (/SXM/i.test(rawName)) gpuName += " SXM";
-          if (/80G/i.test(rawName) && /A100/i.test(gpuName)) gpuName = "A100 80GB SXM";
-          if (/40G/i.test(rawName) && /A100/i.test(gpuName)) gpuName = "A100 40GB";
-        } else {
-          count = 1;
-          gpuName = rawName;
-        }
-        const slug = normalizeGpuSlug(gpuName);
-        if (!slug) continue;
-
-        const isSpot = cells.some((c) => /spot/i.test(c));
-
-        items.push({
-          gpu_slug: slug,
-          configuration: `${count}x ${gpuName}`,
-          price_usd_per_hour: price,
-          billing: "per-hour",
-          availability: isSpot ? "spot" : "on-demand",
-          region: "eu-central",
-          deal_url: DEAL_URL,
-        });
-      }
-
-      // Fallback: product card extraction
-      if (items.length === 0) {
-        const cards = await page.$$eval(
-          "[class*='product-card'], [class*='gpu-card'], [class*='instance-card']",
-          (els) => els.map((el) => (el as HTMLElement).innerText)
-        );
-
-        for (const text of cards) {
-          const gpuMatch = text.match(/((?:V100|A100|H100|A10|RTX)\s*[\w\s]*?)(?:\n|\$)/i);
-          const priceMatch = text.match(/\$([\d.]+)\s*(?:\/\s*hr|per hour)?/i);
-          if (!gpuMatch || !priceMatch) continue;
-          const price = parseFloat(priceMatch[1]);
-          if (isNaN(price) || price <= 0) continue;
-          const gpuName = gpuMatch[1].trim();
-          const slug = normalizeGpuSlug(gpuName);
-          if (!slug) continue;
-
-          items.push({
-            gpu_slug: slug,
-            configuration: `1x ${gpuName}`,
-            price_usd_per_hour: price,
-            billing: "per-hour",
-            availability: "on-demand",
-            region: "eu-central",
-            deal_url: DEAL_URL,
-          });
-        }
-      }
-    } catch (err) {
-      const screenshotDir = "/tmp/screenshots";
-      if (!fs.existsSync(screenshotDir)) fs.mkdirSync(screenshotDir, { recursive: true });
-      const ts = Date.now();
-      await page.screenshot({ path: path.join(screenshotDir, `${PROVIDER_SLUG}-${ts}.png`) });
-      throw err;
-    } finally {
-      // The specific parser above is exact when it works. When it does not,
-      // read the page by meaning rather than markup before giving up.
-      if (items.length === 0) {
-        for (const block of await extractPriceBlocks(page, GPU_NAME_HINTS)) {
-          const item = priceBlockToItem(block, { billing: "per-hour", availability: "on-demand", region: "eu-central", dealUrl: DEAL_URL });
-          if (item && !items.some((i) => i.gpu_slug === item.gpu_slug)) items.push(item);
-        }
-        if (items.length) console.error(`[${PROVIDER_SLUG}] specific parser found nothing; recovered ${items.length} price(s) structurally.`);
-      }
-      if (items.length === 0) await dumpPageDiagnostics(page, PROVIDER_SLUG);
-      await browser.close();
-    }
-
-    return items;
-  });
+  const html = await withRetry(() => fetchPage(PRICING_URL));
+  const items = keepPlausiblePrices(PROVIDER_SLUG, parseGpuRows(htmlSegments(html)));
+  if (!items.length) console.error(`[${PROVIDER_SLUG}] no GPU rows matched in ${html.length} bytes from ${PRICING_URL}`);
+  return items;
 }
 
 const items = await scrape();
