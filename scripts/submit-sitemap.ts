@@ -8,11 +8,11 @@ if (!BING_API_KEY) {
 }
 
 const res = await fetch(
-  `https://ssl.bing.com/webmaster/api.svc/json/SubmitSitemap?apikey=${BING_API_KEY}&siteUrl=${encodeURIComponent(SITE_URL)}`,
+  `https://ssl.bing.com/webmaster/api.svc/json/SubmitFeed?apikey=${BING_API_KEY}`,
   {
     method: 'POST',
     headers: { 'Content-Type': 'application/json; charset=utf-8' },
-    body: JSON.stringify({ sitemap: SITEMAP_URL }),
+    body: JSON.stringify({ siteUrl: SITE_URL, feedUrl: SITEMAP_URL }),
   }
 );
 

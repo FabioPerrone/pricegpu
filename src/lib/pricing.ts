@@ -82,8 +82,34 @@ export function getUseCases(): UseCase[] {
   return readJSON<UseCase[]>(path.join(DATA_DIR, 'use-cases.json')) ?? [];
 }
 
+/**
+ * A feed older than this is not quoted anywhere. A broken scraper leaves its
+ * last file on disk, so without this a price from April keeps winning "cheapest
+ * H100" under a "live" heading. Better an empty row than a wrong price.
+ */
+export const MAX_PRICE_AGE_DAYS = 14;
+
+function isFresh(data: ProviderPrices): boolean {
+  const scraped = Date.parse(data.scraped_at);
+  return Number.isFinite(scraped) && Date.now() - scraped <= MAX_PRICE_AGE_DAYS * 86_400_000;
+}
+
+/**
+ * A rate outside these multiples of the GPU's list price is a parser error: a
+ * monthly figure read as hourly, or a row filed under the wrong GPU. Scrapers
+ * exit zero on those, so nothing else stops one winning "cheapest".
+ */
+function isPlausible(item: PriceItem): boolean {
+  const msrp = getGPUs().find((g) => g.slug === resolveGpuSlug(item.gpu_slug))?.msrp_usd;
+  if (!msrp) return true;
+  return item.price_usd_per_hour <= msrp / 1000 && item.price_usd_per_hour >= msrp / 100_000;
+}
+
+/** Keeps scraped_at for the status page; a stale feed comes back with no rows. */
 export function getProviderPrices(slug: string): ProviderPrices | null {
-  return readJSON<ProviderPrices>(path.join(DATA_DIR, `prices/${priceFileForProvider(slug)}.json`));
+  const data = readJSON<ProviderPrices>(path.join(DATA_DIR, `prices/${priceFileForProvider(slug)}.json`));
+  if (!data) return null;
+  return { ...data, items: isFresh(data) ? data.items.filter(isPlausible) : [] };
 }
 
 /**
@@ -94,8 +120,6 @@ export function getProviderPrices(slug: string): ProviderPrices | null {
  * data/prices/*.json; scripts/audit-affiliates.ts fails the build on a gap.
  */
 const PRICE_FILE_TO_PROVIDER: Record<string, string> = {
-  vast: 'vast-ai',
-  lambda: 'lambda-labs',
   fal: 'fal-ai',
   genesis: 'genesis-cloud',
   together: 'together-ai',
@@ -142,8 +166,8 @@ export function getAllPrices(): Array<PriceItem & { provider_slug: string }> {
   for (const file of files) {
     const slug = resolveProviderSlug(file.replace(/\.json$/, ''));
     const data = readJSON<ProviderPrices>(path.join(pricesDir, file));
-    if (!data) continue;
-    for (const item of data.items) {
+    if (!data || !isFresh(data)) continue;
+    for (const item of data.items.filter(isPlausible)) {
       result.push({ ...item, gpu_slug: resolveGpuSlug(item.gpu_slug), provider_slug: slug });
     }
   }

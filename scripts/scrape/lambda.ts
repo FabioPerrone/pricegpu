@@ -15,8 +15,21 @@ import {
 import type { PriceItem } from "./_shared.js";
 
 const PROVIDER_SLUG = "lambda-labs";
-const PRICING_URL = "https://lambdalabs.com/service/gpu-cloud/pricing";
+const PRICING_URL = "https://lambda.com/pricing";
 const DEAL_URL = "https://lambdalabs.com/service/gpu-cloud";
+
+function lambdaSlug(plan: string, vramGb: number): string | null {
+  const name = plan.toUpperCase();
+  if (name.includes("H100")) return "h100-sxm";
+  if (name.includes("B200")) return "b200";
+  if (name.includes("V100")) return "v100-16gb";
+  if (name.includes("A6000")) return "a6000";
+  if (name.includes("A100")) {
+    const size = vramGb >= 80 ? "80gb" : "40gb";
+    return `a100-${size}-${name.includes("PCIE") ? "pcie" : "sxm"}`;
+  }
+  return null;
+}
 
 export async function scrape(): Promise<PriceItem[]> {
   return withRetry(async () => {
@@ -33,37 +46,35 @@ export async function scrape(): Promise<PriceItem[]> {
         timeout: 30000,
       }).catch(() => null);
 
-      const rows = await page.$$eval("table tbody tr", (trs) =>
-        trs.map((tr) => {
-          const cells = Array.from(tr.querySelectorAll("td"));
-          return cells.map((c) => (c as HTMLElement).innerText.trim());
-        })
+      // The instance tables are the ones with a VRAM/GPU column; the others are
+      // reserved-cluster quotes. The plan name is a <th>, so reading only <td>
+      // shifts every column by one and the VRAM figure gets parsed as the GPU.
+      const rows = await page.$$eval("table", (tables) =>
+        tables
+          .filter((t) => /VRAM\/GPU/i.test((t as HTMLElement).innerText))
+          .flatMap((t) =>
+            Array.from(t.querySelectorAll("tbody tr")).map((tr) =>
+              Array.from(tr.querySelectorAll("td, th")).map((c) => (c as HTMLElement).innerText.trim())
+            )
+          )
       );
 
       for (const cells of rows) {
-        if (cells.length < 2) continue;
-        const rawName = cells[0];
-        const priceText = cells.find((c) => /\$[\d.]+/.test(c)) ?? "";
-        const priceMatch = priceText.match(/\$([\d.]+)/);
+        if (cells.length < 6) continue;
+        const [plan, vram] = cells;
+        const priceMatch = cells[cells.length - 1].match(/\$([\d.]+)/);
         if (!priceMatch) continue;
         const price = parseFloat(priceMatch[1]);
-        if (isNaN(price) || price <= 0) continue;
-
-        // Lambda shows "1x A100 80GB SXM4" style configurations
-        const countMatch = rawName.match(/^(\d+)x?\s+(.+)/i);
-        const count = countMatch ? parseInt(countMatch[1]) : 1;
-        const gpuName = countMatch ? countMatch[2].trim() : rawName;
-        const slug = normalizeGpuSlug(gpuName);
-        if (!slug) continue;
-
-        const isReserved = cells.some((c) => /reserved/i.test(c));
+        const slug = lambdaSlug(plan, parseInt(vram, 10));
+        if (!slug || isNaN(price) || price <= 0) continue;
+        if (items.some((i) => i.gpu_slug === slug && i.price_usd_per_hour === price)) continue;
 
         items.push({
           gpu_slug: slug,
-          configuration: `${count}x ${gpuName}`,
+          configuration: `1x ${plan}`,
           price_usd_per_hour: price,
           billing: "per-hour",
-          availability: isReserved ? "reserved" : "on-demand",
+          availability: "on-demand",
           region: "us-west-1",
           deal_url: DEAL_URL,
         });

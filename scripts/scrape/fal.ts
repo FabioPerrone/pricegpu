@@ -1,16 +1,12 @@
 
-import fs from "fs";
-import path from "path";
 import {
-  extractPriceBlocks,
-  priceBlockToItem,
-  GPU_NAME_HINTS,
-  dumpPageDiagnostics,
-  launchBrowser,
+  fetchPage,
+  htmlSegments,
+  keepPlausiblePrices,
   normalizeGpuSlug,
+  parseDollars,
   saveProviderPrices,
   withRetry,
-  USER_AGENT,
 } from "./_shared.js";
 import type { PriceItem } from "./_shared.js";
 
@@ -18,125 +14,37 @@ const PROVIDER_SLUG = "fal";
 const PRICING_URL = "https://fal.ai/pricing";
 const DEAL_URL = "https://fal.ai/";
 
+/**
+ * Cards read `H100 | VRAM | 80 GB | List Price | $4.50/h | As low as | $2.49/h`.
+ * The list price is the rate anyone pays; "as low as" depends on a sales
+ * agreement, so it is not recorded.
+ */
+export function parseGpuRows(segments: string[]): PriceItem[] {
+  const items: PriceItem[] = [];
+  for (let i = 3; i < segments.length; i++) {
+    if (segments[i] !== "List Price" || segments[i - 2] !== "VRAM") continue;
+    const price = parseDollars(segments[i + 1]);
+    const name = segments[i - 3];
+    const slug = normalizeGpuSlug(name);
+    if (price === null || !slug) continue;
+    items.push({
+      gpu_slug: slug,
+      configuration: `1x ${name}`,
+      price_usd_per_hour: price,
+      billing: "per-second",
+      availability: "on-demand",
+      region: "us-east",
+      deal_url: DEAL_URL,
+    });
+  }
+  return items;
+}
+
 export async function scrape(): Promise<PriceItem[]> {
-  return withRetry(async () => {
-    const browser = await launchBrowser();
-    const context = await browser.newContext({ userAgent: USER_AGENT });
-    const page = await context.newPage();
-    const items: PriceItem[] = [];
-
-    try {
-      await page.goto(PRICING_URL, { waitUntil: "domcontentloaded", timeout: 45000 });
-
-      // fal.ai shows GPU machine types with per-second or per-millisecond pricing
-      await page.waitForSelector("table, [class*='gpu'], [class*='machine'], [class*='pricing']", {
-        timeout: 30000,
-      }).catch(() => null);
-
-      const rows = await page.$$eval("table tbody tr", (trs) =>
-        trs.map((tr) => {
-          const cells = Array.from(tr.querySelectorAll("td"));
-          return cells.map((c) => (c as HTMLElement).innerText.trim());
-        })
-      );
-
-      for (const cells of rows) {
-        if (cells.length < 2) continue;
-        const rawName = cells[0];
-        if (/cpu/i.test(rawName) && !/gpu/i.test(rawName)) continue;
-
-        const priceText = cells.find((c) => /\$[\d.]+/.test(c)) ?? "";
-        const priceMatch = priceText.match(/\$([\d.]+)\s*\/\s*(ms|millisecond|second|sec|s|hr|hour)/i);
-
-        let price: number;
-        let billing: "per-second" | "per-minute" | "per-hour" = "per-second";
-
-        if (priceMatch) {
-          price = parseFloat(priceMatch[1]);
-          const unit = priceMatch[2].toLowerCase();
-          if (unit === "ms" || unit === "millisecond") {
-            price = price * 3600 * 1000;
-          } else if (unit === "second" || unit === "sec" || unit === "s") {
-            price = price * 3600;
-          } else {
-            billing = "per-hour";
-          }
-        } else {
-          const simpleMatch = priceText.match(/\$([\d.]+)/);
-          if (!simpleMatch) continue;
-          price = parseFloat(simpleMatch[1]);
-          billing = "per-hour";
-        }
-
-        if (isNaN(price) || price <= 0) continue;
-
-        const slug = normalizeGpuSlug(rawName);
-        if (!slug) continue;
-
-        items.push({
-          gpu_slug: slug,
-          configuration: `1x ${rawName}`,
-          price_usd_per_hour: price,
-          billing,
-          availability: "on-demand",
-          region: "us-east",
-          deal_url: DEAL_URL,
-        });
-      }
-
-      // Fallback: machine type listing blocks
-      if (items.length === 0) {
-        const blocks = await page.$$eval(
-          "[class*='machine'], [class*='gpu-type'], [class*='hardware']",
-          (els) => els.map((el) => (el as HTMLElement).innerText)
-        );
-
-        for (const text of blocks) {
-          const gpuMatch = text.match(/((?:A100|H100|T4|A10|L40|RTX|A40)\s*[\w\s]*?)(?:\n|\$)/i);
-          const priceMatch = text.match(/\$([\d.]+)\s*\/\s*(ms|second|s)\b/i);
-          if (!gpuMatch || !priceMatch) continue;
-          let price = parseFloat(priceMatch[1]);
-          const unit = priceMatch[2].toLowerCase();
-          if (unit === "ms") price = price * 3600 * 1000;
-          else price = price * 3600;
-          if (isNaN(price) || price <= 0) continue;
-          const gpuName = gpuMatch[1].trim();
-          const slug = normalizeGpuSlug(gpuName);
-          if (!slug) continue;
-
-          items.push({
-            gpu_slug: slug,
-            configuration: `1x ${gpuName}`,
-            price_usd_per_hour: price,
-            billing: "per-second",
-            availability: "on-demand",
-            region: "us-east",
-            deal_url: DEAL_URL,
-          });
-        }
-      }
-    } catch (err) {
-      const screenshotDir = "/tmp/screenshots";
-      if (!fs.existsSync(screenshotDir)) fs.mkdirSync(screenshotDir, { recursive: true });
-      const ts = Date.now();
-      await page.screenshot({ path: path.join(screenshotDir, `${PROVIDER_SLUG}-${ts}.png`) });
-      throw err;
-    } finally {
-      // The specific parser above is exact when it works. When it does not,
-      // read the page by meaning rather than markup before giving up.
-      if (items.length === 0) {
-        for (const block of await extractPriceBlocks(page, GPU_NAME_HINTS)) {
-          const item = priceBlockToItem(block, { billing: "per-second", availability: "on-demand", region: "us-east", dealUrl: DEAL_URL });
-          if (item && !items.some((i) => i.gpu_slug === item.gpu_slug)) items.push(item);
-        }
-        if (items.length) console.error(`[${PROVIDER_SLUG}] specific parser found nothing; recovered ${items.length} price(s) structurally.`);
-      }
-      if (items.length === 0) await dumpPageDiagnostics(page, PROVIDER_SLUG);
-      await browser.close();
-    }
-
-    return items;
-  });
+  const html = await withRetry(() => fetchPage(PRICING_URL));
+  const items = keepPlausiblePrices(PROVIDER_SLUG, parseGpuRows(htmlSegments(html)));
+  if (!items.length) console.error(`[${PROVIDER_SLUG}] no GPU rows matched in ${html.length} bytes from ${PRICING_URL}`);
+  return items;
 }
 
 const items = await scrape();

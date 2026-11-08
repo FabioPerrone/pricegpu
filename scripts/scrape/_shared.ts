@@ -189,10 +189,19 @@ export const GPU_SLUG_MAP: Record<string, string> = {
   "Intel Gaudi 3": "gaudi-3",
   "Gaudi3": "gaudi-3",
   "gaudi-3": "gaudi-3",
+  "HGX H100": "h100-sxm",
+  "H100 NVLink": "h100-pcie",
+  "A100 NVLink": "a100-80gb-pcie",
+  "A100, 80 GB": "a100-80gb-sxm",
+  "A100, 40 GB": "a100-40gb-pcie",
 };
 
 export function normalizeGpuSlug(name: string): string | null {
   const trimmed = name.trim();
+  // GB200/GH200 and the RTX A2000/A4000/A5000 contain "B200", "H200" or
+  // "NVIDIA A40" as substrings but are different products with no gpus.json
+  // entry; the fuzzy matching below would misfile them.
+  if (/\b(G[BH]\d{3}|A[245]000)\b/i.test(trimmed)) return null;
   if (GPU_SLUG_MAP[trimmed]) return GPU_SLUG_MAP[trimmed];
   const lower = trimmed.toLowerCase();
   for (const [key, slug] of Object.entries(GPU_SLUG_MAP)) {
@@ -207,7 +216,8 @@ export function normalizeGpuSlug(name: string): string | null {
     if (key.length > 3 && lower.includes(key.toLowerCase())) return slug;
   }
   for (const [key, slug] of Object.entries(GPU_SLUG_MAP)) {
-    if (key.length > 3 && key.toLowerCase().includes(lower)) return slug;
+    // Needs a digit: "GB" alone is a substring of the first H100 key.
+    if (key.length > 3 && /\d/.test(lower) && key.toLowerCase().includes(lower)) return slug;
   }
   return null;
 }
@@ -254,6 +264,75 @@ export function saveProviderPrices(providerSlug: string, items: PriceItem[]): vo
   const outPath = path.join(outDir, `${providerSlug}.json`);
   fs.writeFileSync(outPath, JSON.stringify(parsed.data, null, 2));
   console.log(`[${providerSlug}] Saved ${items.length} items to ${outPath}`);
+}
+
+/**
+ * Fetches a page's server-rendered HTML. Several providers ship their full
+ * price table in the initial response, and reading that needs no browser.
+ */
+export async function fetchPage(url: string, accept = "text/html"): Promise<string> {
+  const res = await fetch(url, {
+    headers: { "User-Agent": USER_AGENT, Accept: accept },
+    redirect: "follow",
+    signal: AbortSignal.timeout(30000),
+  });
+  if (!res.ok) throw new Error(`${url} returned HTTP ${res.status}`);
+  return res.text();
+}
+
+const HTML_ENTITIES: Record<string, string> = {
+  amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ",
+};
+
+function decodeEntities(text: string): string {
+  return text.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (whole, code: string) => {
+    if (code[0] !== "#") return HTML_ENTITIES[code.toLowerCase()] ?? whole;
+    const hex = code[1].toLowerCase() === "x";
+    return String.fromCodePoint(parseInt(code.slice(hex ? 2 : 1), hex ? 16 : 10));
+  });
+}
+
+/** The page's visible text nodes, in document order, trimmed and non-empty. */
+export function htmlSegments(html: string): string[] {
+  return html
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/<(script|style|noscript)\b[\s\S]*?<\/\1>/gi, "")
+    .split(/<[^>]*>/)
+    .map((s) => decodeEntities(s).replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+}
+
+/** Reads "$4.938/h" or "$49.24" as a number; null if the text is not a price. */
+export function parseDollars(text: string | undefined): number | null {
+  const m = text?.match(/^\$\s?(\d[\d,]*(?:\.\d+)?)(?:\s*\/\s*(?:h|hr|hour))?$/i);
+  if (!m) return null;
+  const value = parseFloat(m[1].replace(/,/g, ""));
+  return Number.isFinite(value) ? value : null;
+}
+
+/** Plausible USD per GPU-hour by slug; outside this a number is a parse error. */
+const PRICE_BOUNDS: Array<[RegExp, number, number]> = [
+  [/^h100-/, 0.5, 20],
+  [/^h200-/, 0.5, 25],
+  [/^b(100|200)$/, 1, 30],
+  [/^a100-/, 0.2, 10],
+  [/^mi300x$/, 0.5, 20],
+];
+const DEFAULT_PRICE_BOUNDS: [number, number] = [0.02, 20];
+
+/** Drops rows whose per-GPU price is implausible, naming each one. */
+export function keepPlausiblePrices(providerSlug: string, items: PriceItem[]): PriceItem[] {
+  return items.filter((item) => {
+    const bound = PRICE_BOUNDS.find(([re]) => re.test(item.gpu_slug));
+    const [min, max] = bound ? [bound[1], bound[2]] : DEFAULT_PRICE_BOUNDS;
+    const ok = item.price_usd_per_hour >= min && item.price_usd_per_hour <= max;
+    if (!ok) {
+      console.warn(
+        `[${providerSlug}] dropped implausible price: ${item.gpu_slug} $${item.price_usd_per_hour}/hr (expected ${min}-${max})`
+      );
+    }
+    return ok;
+  });
 }
 
 export async function withRetry<T>(fn: () => Promise<T>, retries = 3): Promise<T> {

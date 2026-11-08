@@ -1,11 +1,10 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { buildTitle, buildDescription, buildCanonical, buildBreadcrumbs } from '../lib/seo.ts';
-import { getProviders, getGPUs } from '../lib/pricing.ts';
+import { getProviders, getGPUs, MAX_PRICE_AGE_DAYS } from '../lib/pricing.ts';
 
 const providers = getProviders();
 const gpus = getGPUs();
-const ownerName = import.meta.env.OWNER_NAME || '[Site Owner]';
 const title = buildTitle(['About PriceGPU']);
 const description = buildDescription('PriceGPU aggregates cloud GPU rental pricing across 15+ providers. Learn about our methodology, data freshness, and team.');
 const canonical = buildCanonical('/about');
@@ -16,9 +15,9 @@ const schemas = [buildBreadcrumbs([{ name: 'Home', url: '/' }, { name: 'About', 
   <nav class="breadcrumb"><a href="/">Home</a><span>/</span><span>About</span></nav>
   <h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 1.5rem;">About PriceGPU</h1>
   <div class="prose">
-    <p>PriceGPU is a price comparison tool for cloud GPU rentals, tracking {providers.length} providers across {gpus.length} GPU models, refreshed weekly via automated scrapers.</p>
+    <p>PriceGPU is a price comparison tool for cloud GPU rentals, tracking {providers.length} providers across {gpus.length} GPU models, refreshed daily via automated scrapers.</p>
     <h2>What we do</h2>
-    <p>Every Monday at 03:00 UTC, scrapers visit each provider's pricing page, extract GPU rental rates, normalize them, and commit the data to our public GitHub repository. Pages are rebuilt and deployed to Cloudflare Pages automatically.</p>
+    <p>Every day at 03:00 UTC, scrapers visit each provider's pricing page, extract GPU rental rates, normalize them, and commit the data to our public GitHub repository. Pages are rebuilt and deployed to Cloudflare Pages automatically.</p>
     <h2>What we don't do</h2>
     <ul>
       <li>We do not present scraped prices as authoritative. Every table includes a "last verified" date.</li>
@@ -29,7 +28,7 @@ const schemas = [buildBreadcrumbs([{ name: 'Home', url: '/' }, { name: 'About', 
     <p>PriceGPU earns referral commissions from some providers. This does not affect pricing data, table ordering, or editorial content. See our <a href="/disclosure">full affiliate disclosure</a>.</p>
     <h2>Public data</h2>
     <p>All pricing data is available via the <a href="/api/prices.json">public JSON API</a>, licensed under CC-BY-4.0.</p>
-    <h2>Editorial</h2>
-    <p>Data is compiled by automated scrapers. Editorial review by {ownerName}.</p>
+    <h2>How the site is run</h2>
+    <p>Prices and weekly market reports are compiled automatically from the scraped data. A provider whose data has not refreshed in {MAX_PRICE_AGE_DAYS} days is dropped from the tables until its feed recovers.</p>
   </div>
 </Layout>

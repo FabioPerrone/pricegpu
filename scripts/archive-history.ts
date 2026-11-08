@@ -34,6 +34,9 @@ for (const file of pricesFiles) {
       fs.readFileSync(path.join(PRICES_DIR, file), 'utf-8')
     ) as ProviderPrices;
 
+    // A dead feed's old price must not enter the history as today's.
+    if (Date.now() - Date.parse(data.scraped_at) > 14 * 86_400_000) continue;
+
     for (const item of data.items) {
       const key = item.gpu_slug;
       if (!cheapestByGPU.has(key) || item.price_usd_per_hour < cheapestByGPU.get(key)!.price) {

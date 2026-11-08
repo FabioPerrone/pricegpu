@@ -46,7 +46,7 @@ const relatedLinks = [
 ];
 ---
 
-<Layout {title} {description} {canonical} {schemas}>
+<Layout {title} {description} {canonical} {schemas} noindex={prices.length === 0}>
   <nav class="breadcrumb">
     <a href="/">Home</a><span>/</span><a href="/provider">Providers</a><span>/</span><span>{provider.name}</span>
   </nav>

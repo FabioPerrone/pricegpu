@@ -4,7 +4,6 @@ import PriceTable from '../../components/PriceTable.astro';
 import CTA from '../../components/CTA.astro';
 import RelatedPages from '../../components/RelatedPages.astro';
 import AdSlot from '../../components/AdSlot.astro';
-import PriceAlertForm from '../../components/PriceAlertForm.astro';
 import { getPriceChange, generateSparklineSVG } from '../../lib/history.ts';
 import {
   getGPUs, getProviders, getPricesForGPU, formatPrice,
@@ -178,8 +177,6 @@ const relatedLinks = [
       )}
     </>
   )}
-
-  <PriceAlertForm gpuSlug={gpu.slug} gpuName={gpu.name} mode={hasPrices ? 'drop' : 'availability'} />
 
   <AdSlot />
 

@@ -33,68 +33,24 @@ export async function scrape(): Promise<PriceItem[]> {
         timeout: 30000,
       }).catch(() => null);
 
-      // Try table rows first
-      const rows = await page.$$eval("table tbody tr", (trs) =>
-        trs.map((tr) => {
-          const cells = Array.from(tr.querySelectorAll("td"));
-          return cells.map((c) => (c as HTMLElement).innerText.trim());
-        })
-      );
-
-      for (const cells of rows) {
-        if (cells.length < 2) continue;
-        // Paperspace often shows machine name like "A100-80G" and price "$2.30/hr"
-        const rawName = cells[0];
-        const priceText = cells.find((c) => /\$[\d.]+/.test(c)) ?? "";
-        const priceMatch = priceText.match(/\$([\d.]+)/);
-        if (!priceMatch) continue;
-        const price = parseFloat(priceMatch[1]);
-        if (isNaN(price) || price <= 0) continue;
-
-        // Paperspace uses machine names like "A100-80G", "RTX4000", "P5000"
-        const slug = normalizeGpuSlug(rawName.replace(/-/g, " ").replace(/(\d+)G\b/, "$1GB"));
-        if (!slug) continue;
-
-        const isSpot = cells.some((c) => /spot/i.test(c));
-
+      // The page is cards, not tables, and mixes three kinds of price: hourly
+      // ("A6000 $ 1.89 / hour"), monthly ("A6000 $ 1219 / month") and starred
+      // commitment rates ("A100-80G $ 1.15** / hour", 3-year term). Only an
+      // unstarred hourly rate directly after the machine name is on-demand.
+      const text = (await page.evaluate(() => document.body.innerText)).replace(/\s+/g, " ");
+      for (const match of text.matchAll(/\b(A6000|V100)\s+\$\s*([\d.]+)\s*\/\s*hour\b/gi)) {
+        const slug = normalizeGpuSlug(match[1]);
+        const price = parseFloat(match[2]);
+        if (!slug || isNaN(price) || price <= 0 || items.some((i) => i.gpu_slug === slug)) continue;
         items.push({
           gpu_slug: slug,
-          configuration: `1x ${rawName}`,
+          configuration: `1x ${match[1]}`,
           price_usd_per_hour: price,
           billing: "per-hour",
-          availability: isSpot ? "spot" : "on-demand",
+          availability: "on-demand",
           region: "us-east-1",
           deal_url: DEAL_URL,
         });
-      }
-
-      // Fallback: look for machine cards with GPU names and prices
-      if (items.length === 0) {
-        const cards = await page.$$eval(
-          "[class*='machine-card'], [class*='gpu-card'], [class*='plan-card'], [class*='instance']",
-          (els) => els.map((el) => (el as HTMLElement).innerText)
-        );
-
-        for (const text of cards) {
-          const gpuMatch = text.match(/((?:A100|H100|RTX|V100|P5000|P6000|A4000|A5000|A6000|A40|L40|RTX4000|RTX5000)\s*[\w\s-]*?)(?:\n|\$)/i);
-          const priceMatch = text.match(/\$([\d.]+)\s*(?:\/\s*hr|\/hr|per hour)?/i);
-          if (!gpuMatch || !priceMatch) continue;
-          const price = parseFloat(priceMatch[1]);
-          if (isNaN(price) || price <= 0) continue;
-          const gpuName = gpuMatch[1].trim();
-          const slug = normalizeGpuSlug(gpuName.replace(/-/g, " ").replace(/(\d+)G\b/, "$1GB"));
-          if (!slug) continue;
-
-          items.push({
-            gpu_slug: slug,
-            configuration: `1x ${gpuName}`,
-            price_usd_per_hour: price,
-            billing: "per-hour",
-            availability: "on-demand",
-            region: "us-east-1",
-            deal_url: DEAL_URL,
-          });
-        }
       }
     } catch (err) {
       const screenshotDir = "/tmp/screenshots";
