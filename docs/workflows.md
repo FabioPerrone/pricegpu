@@ -25,4 +25,6 @@ GitHub secrets: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `BING_WEBMASTER
 
 GitHub variables, read at build time: `PUBLIC_ADSENSE_SLOT` (AdSense unit id, ad units stay off until set), `OWNER_EMAIL` (published contact address).
 
-Cloudflare Pages environment variables: the `*_REF` affiliate codes listed as `affiliate_param_env` in `data/providers.json`. A provider with no code redirects without attribution and earns nothing. The `ANALYTICS` D1 binding enables click logging (`schema.sql`).
+GitHub secrets, copied to the Cloudflare Pages project on every deploy: the `*_REF` affiliate codes listed as `affiliate_param_env` in `data/providers.json`. A provider with no code redirects without attribution and earns nothing.
+
+Cloudflare Pages: the `ANALYTICS` D1 binding enables click logging (`schema.sql`).
