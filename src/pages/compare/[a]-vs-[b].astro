@@ -103,7 +103,7 @@ const relatedLinks = [
 ];
 ---
 
-<Layout {title} {description} {canonical} {schemas}>
+<Layout {title} {description} {canonical} {schemas} noindex={pricesA.length === 0 || pricesB.length === 0}>
   <nav class="breadcrumb">
     <a href="/">Home</a><span>/</span><a href="/compare">Compare</a><span>/</span>
     <span>{providerA.name} vs {providerB.name}</span>

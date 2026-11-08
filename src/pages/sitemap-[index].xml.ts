@@ -3,10 +3,11 @@ import {
   getGPUs, getProviders, getUseCases, getValidCheapestPairs,
 } from '../lib/pricing.ts';
 import { getLastmod } from '../lib/seo.ts';
+import { getCollection } from 'astro:content';
 
 const CHUNK_SIZE = 45000;
 
-function getAllUrls(): Array<{ loc: string; lastmod: string; priority: string }> {
+async function getAllUrls(): Promise<Array<{ loc: string; lastmod: string; priority: string }>> {
   const gpus = getGPUs();
   const providers = getProviders();
   const useCases = getUseCases();
@@ -54,20 +55,30 @@ function getAllUrls(): Array<{ loc: string; lastmod: string; priority: string }>
     });
   }
 
+  urls.push({ loc: 'https://pricegpu.com/blog', lastmod: today, priority: '0.6' });
+  for (const post of await getCollection('blog')) {
+    if (post.data.draft || post.data.isNews) continue;
+    urls.push({
+      loc: `https://pricegpu.com/blog/${post.data.slug}`,
+      lastmod: post.data.pubDate.toISOString().slice(0, 10),
+      priority: '0.6',
+    });
+  }
+
   return urls;
 }
 
-export const getStaticPaths: GetStaticPaths = () => {
-  const urls = getAllUrls();
+export const getStaticPaths: GetStaticPaths = async () => {
+  const urls = await getAllUrls();
   const totalChunks = Math.ceil(urls.length / CHUNK_SIZE);
   return Array.from({ length: totalChunks }, (_, i) => ({
     params: { index: i.toString() },
   }));
 };
 
-export const GET: APIRoute = ({ params }) => {
+export const GET: APIRoute = async ({ params }) => {
   const index = parseInt(params.index ?? '0', 10);
-  const urls = getAllUrls();
+  const urls = await getAllUrls();
   const chunk = urls.slice(index * CHUNK_SIZE, (index + 1) * CHUNK_SIZE);
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>

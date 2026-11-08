@@ -9,6 +9,10 @@ on:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
 jobs:
   deploy:
     name: Build & Deploy
@@ -24,6 +28,9 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run build
+        env:
+          PUBLIC_ADSENSE_SLOT: ${{ vars.PUBLIC_ADSENSE_SLOT }}
+          OWNER_EMAIL: ${{ vars.OWNER_EMAIL }}
       - run: cp -r functions dist/
       - name: Publish to Cloudflare Pages
         run: npx wrangler pages deploy dist --project-name=pricegpu

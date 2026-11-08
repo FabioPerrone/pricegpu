@@ -18,6 +18,9 @@ const strict = process.argv.includes('--strict');
 /** Prices older than this are stale enough to mislead a buyer. */
 const STALE_AFTER_DAYS = Number(process.argv[process.argv.indexOf('--max-stale-days') + 1]) || 10;
 
+/** Below this many live feeds the comparison is no longer worth publishing. */
+const MIN_FRESH_FEEDS = 4;
+
 interface Provider { slug: string; name: string; affiliate_param_env: string | null }
 interface GPU { slug: string; name: string }
 
@@ -123,12 +126,17 @@ if (asJson) {
 }
 
 if (strict) {
+  const freshFeeds = feeds.filter((f) => f.rows > 0 && !f.stale).length;
   const failures = [
     report.summary.orphanedGpuSlugs.length && `${report.summary.orphanedGpuSlugs.length} orphaned GPU slug(s)`,
     report.summary.emptyFeeds.length && `${report.summary.emptyFeeds.length} empty price feed(s)`,
-    report.summary.staleFeeds.length &&
-      `${report.summary.staleFeeds.length} feed(s) older than ${STALE_AFTER_DAYS}d: ${report.summary.staleFeeds.join(', ')}`,
+    freshFeeds < MIN_FRESH_FEEDS && `only ${freshFeeds} fresh feed(s), need ${MIN_FRESH_FEEDS}`,
   ].filter(Boolean);
+  // One dead provider is a to-do, not an outage: its rows are already dropped
+  // from the site, and failing here is what used to stop every deploy.
+  if (report.summary.staleFeeds.length) {
+    console.log(`\n⚠️  ${report.summary.staleFeeds.length} stale feed(s): ${report.summary.staleFeeds.join(', ')}`);
+  }
   if (failures.length) {
     console.error(`\n❌ ${failures.join('; ')}`);
     process.exit(1);

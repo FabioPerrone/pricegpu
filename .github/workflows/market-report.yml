@@ -1,7 +1,8 @@
-name: Generate Content
+name: Weekly Market Report
 
 on:
   schedule:
+    # Monday, after the 03:00 scrape has had time to finish.
     - cron: '0 6 * * 1'
   workflow_dispatch:
 
@@ -9,8 +10,8 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  generate:
-    name: Generate copy with Qwen3-32B via Groq
+  report:
+    name: Publish the weekly report from scraped data
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -18,27 +19,27 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
       - run: npm ci
-      - run: npx tsx scripts/generate-copy.ts
-        env:
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-      - run: |
+      - run: npm run market-report
+      - id: commit
+        run: |
           git config user.email "bot@pricegpu.com"
           git config user.name "PriceGPU Bot"
-          git add data/generated/ src/content/
+          git add src/content/blog/
           if git diff --cached --quiet; then
-            echo "No generated content changes to commit."
+            echo "No new report."
           else
-            git commit -m "chore: regenerate content $(date -u '+%Y-%m-%d')"
+            git commit -m "chore: weekly GPU market report $(date -u '+%Y-%m-%d')"
             git push
+            echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
-      - uses: actions/github-script@v7
+      - name: Deploy the report
+        if: steps.commit.outputs.changed == 'true'
+        uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |

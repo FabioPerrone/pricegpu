@@ -26,8 +26,6 @@ async function getUrlsToSubmit(): Promise<string[]> {
   urls.push(
     SITE,
     `${SITE}/blog`,
-    `${SITE}/compare`,
-    `${SITE}/cheapest`,
   );
 
   // Blog posts — fetch from sitemap or hardcode recent ones
