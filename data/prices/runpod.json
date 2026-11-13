@@ -1,5 +1,5 @@
 {
-  "scraped_at": "2026-11-12T10:28:23.251Z",
+  "scraped_at": "2026-11-13T10:19:36.908Z",
   "scraper_version": "1.0.0",
   "items": [
     {
@@ -68,7 +68,7 @@
     {
       "gpu_slug": "h100-sxm",
       "configuration": "1x H100 SXM",
-      "price_usd_per_hour": 3.99,
+      "price_usd_per_hour": 4.39,
       "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",
@@ -77,7 +77,7 @@
     {
       "gpu_slug": "h100-sxm",
       "configuration": "1x H100 SXM",
-      "price_usd_per_hour": 3.99,
+      "price_usd_per_hour": 4.39,
       "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",
@@ -86,7 +86,7 @@
     {
       "gpu_slug": "a100-40gb-pcie",
       "configuration": "1x A100 PCIe",
-      "price_usd_per_hour": 1.79,
+      "price_usd_per_hour": 2.09,
       "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",
@@ -95,7 +95,7 @@
     {
       "gpu_slug": "a100-40gb-pcie",
       "configuration": "1x A100 PCIe",
-      "price_usd_per_hour": 1.79,
+      "price_usd_per_hour": 2.09,
       "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",
@@ -104,7 +104,7 @@
     {
       "gpu_slug": "a100-80gb-sxm",
       "configuration": "1x A100 SXM",
-      "price_usd_per_hour": 1.79,
+      "price_usd_per_hour": 2.19,
       "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",
@@ -113,7 +113,7 @@
     {
       "gpu_slug": "a100-80gb-sxm",
       "configuration": "1x A100 SXM",
-      "price_usd_per_hour": 1.79,
+      "price_usd_per_hour": 2.19,
       "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",
@@ -140,7 +140,7 @@
     {
       "gpu_slug": "rtx-6000-ada",
       "configuration": "1x RTX 6000 Ada",
-      "price_usd_per_hour": 0.99,
+      "price_usd_per_hour": 1.09,
       "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",
@@ -149,7 +149,7 @@
     {
       "gpu_slug": "rtx-6000-ada",
       "configuration": "1x RTX 6000 Ada",
-      "price_usd_per_hour": 0.99,
+      "price_usd_per_hour": 1.09,
       "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",
@@ -194,7 +194,7 @@
     {
       "gpu_slug": "a6000",
       "configuration": "1x RTX A6000",
-      "price_usd_per_hour": 0.59,
+      "price_usd_per_hour": 0.69,
       "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",
@@ -203,7 +203,7 @@
     {
       "gpu_slug": "a6000",
       "configuration": "1x RTX A6000",
-      "price_usd_per_hour": 0.59,
+      "price_usd_per_hour": 0.69,
       "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",
@@ -212,7 +212,7 @@
     {
       "gpu_slug": "rtx-5090",
       "configuration": "1x RTX 5090",
-      "price_usd_per_hour": 1.19,
+      "price_usd_per_hour": 1.39,
       "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",
@@ -221,7 +221,7 @@
     {
       "gpu_slug": "rtx-5090",
       "configuration": "1x RTX 5090",
-      "price_usd_per_hour": 1.19,
+      "price_usd_per_hour": 1.39,
       "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",
@@ -230,7 +230,7 @@
     {
       "gpu_slug": "rtx-5090",
       "configuration": "1x RTX 5090",
-      "price_usd_per_hour": 1.19,
+      "price_usd_per_hour": 1.39,
       "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",
@@ -239,7 +239,7 @@
     {
       "gpu_slug": "l4",
       "configuration": "1x L4",
-      "price_usd_per_hour": 0.59,
+      "price_usd_per_hour": 0.69,
       "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",
@@ -248,7 +248,7 @@
     {
       "gpu_slug": "l4",
       "configuration": "1x L4",
-      "price_usd_per_hour": 0.59,
+      "price_usd_per_hour": 0.69,
       "billing": "per-second",
       "availability": "on-demand",
       "region": "us-east",

@@ -1,11 +1,20 @@
 {
-  "scraped_at": "2026-11-12T10:34:13.823Z",
+  "scraped_at": "2026-11-13T10:25:30.397Z",
   "scraper_version": "1.0.0",
   "items": [
     {
+      "gpu_slug": "h200-sxm",
+      "configuration": "1x NVIDIA HGX H200",
+      "price_usd_per_hour": 5.99,
+      "billing": "per-hour",
+      "availability": "on-demand",
+      "region": "us-east",
+      "deal_url": "https://api.together.ai/"
+    },
+    {
       "gpu_slug": "b200",
       "configuration": "1x NVIDIA HGX B200",
-      "price_usd_per_hour": 8.99,
+      "price_usd_per_hour": 9.29,
       "billing": "per-hour",
       "availability": "on-demand",
       "region": "us-east",
@@ -23,7 +32,7 @@
     {
       "gpu_slug": "b200",
       "configuration": "1x NVIDIA HGX B200",
-      "price_usd_per_hour": 4.09,
+      "price_usd_per_hour": 4.65,
       "billing": "per-hour",
       "availability": "on-demand",
       "region": "us-east",
